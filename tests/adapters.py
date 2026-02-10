@@ -1,16 +1,17 @@
 from typing import Any
 from jaxtyping import Float
-
+from therapml.basic_tensor import tensor_multiply, tensor_dot
+from therapml.optimizers import SGD
 from torch import Tensor
 
-def run_tensor_multiply(arr1: Float[list, "b x y"], arr2: Float[list, "b y z"]) -> Float[list, "b x z"]:
-    raise NotImplementedError
+def run_tensor_multiply(arr1: Float[List, "b x y"], arr2: Float[List, "b y z"]) -> Float[List, "b x z"]:
+    return tensor_multiply(arr1, arr2)
 
-def run_tensor_dot(arr1: Float[list, "..."], arr2: Float[list, "..."], dim: int):
-    raise NotImplementedError
+def run_tensor_dot(arr1: Float[List, "..."], arr2: Float[List, "..."], dim: int):
+    return tensor_dot(arr1, arr2, dim)
 
 def get_sgd_cls() -> Any:
-    raise NotImplementedError
+    return SGD
 
 def get_adam_cls() -> Any:
     raise NotImplementedError
