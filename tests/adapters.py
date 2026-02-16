@@ -1,7 +1,7 @@
 from typing import Any
 from jaxtyping import Float
 from therapml.basic_tensor import tensor_multiply, tensor_dot
-from therapml.optimizers import SGD
+from therapml.optimizers import SGD, Adam
 from torch import Tensor
 
 def run_tensor_multiply(arr1: Float[List, "b x y"], arr2: Float[List, "b y z"]) -> Float[List, "b x z"]:
@@ -14,7 +14,7 @@ def get_sgd_cls() -> Any:
     return SGD
 
 def get_adam_cls() -> Any:
-    raise NotImplementedError
+    return Adam
 
 def run_relu(in_features: Float[Tensor, "..."]) -> Float[Tensor, "..."]:
     raise NotImplementedError

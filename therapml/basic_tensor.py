@@ -33,11 +33,10 @@ def tensor_dot(arr1, arr2, dim):
         return res
     elif len(shape1) == 2:
         if dim == 0:
-            res = [[0 for _ in range(shape2[1])] for _ in range(shape1[1])]
-            for i in range(shape1[1]):
-                for j in range(shape2[1]):
-                    for k in range(shape1[0]):
-                        res[i][j] += arr1[k][i] * arr2[k][j]
+            res = [0.0 for _ in range(shape1[1])]
+            for i in range(shape1[0]):
+                for j in range(shape1[1]):
+                    res[j] += arr1[i][j] * arr2[i][j]
             
             return res
         else:
@@ -49,30 +48,18 @@ def tensor_dot(arr1, arr2, dim):
             return res
     else:
         if dim == 0:
-            res = [[[0 for _ in range(shape2[2])] for _ in range(shape2[1])] for _ in range(shape1[1])]
-            for j in range(shape1[1]):
-                for l in range(shape2[1]):
-                    for k in range(shape2[2]):
-                        for i in range(shape1[0]):
-                            res[j][l][k] += arr1[i][j][k] * arr2[i][l][k]
+            res = [[0.0 for _ in range(shape1[2])] for _ in range(shape1[1])]
+            for i in range(shape1[0]):
+                for j in range(shape1[1]):
+                    for k in range(shape1[2]):
+                        res[j][k] += arr1[i][j][k] * arr2[i][j][k]
 
             return res
         else:
-            pytest.skip("Two different values in dimension 2.")
-            while shape2[2] < shape1[2]:
-                shape2[2] += 1
-                for i in range(shape2[0]):
-                    for j in range(shape2[1]):
-                        arr2[i][j].append(0.0)
-
-            print(shape1, shape2)
-            print(get_shape(arr1), get_shape(arr2))
-
-            res = [[[0.0 for _ in range(min(shape1[2], shape2[2]))] for _ in range(shape2[1])] for _ in range(shape2[0])]
-            for i in range(shape2[0]):
-                for l in range(shape2[1]):
-                    for k in range(min(shape1[2], shape2[2])):
-                        for j in range(shape1[1]):
-                            res[i][l][k] += arr1[i][j][k] * arr2[i][l][k]
+            res = [[0.0 for _ in range(shape1[2])] for _ in range(shape1[0])]
+            for i in range(shape1[0]):
+                for j in range(shape1[1]):
+                    for k in range(shape1[2]):
+                        res[i][k] += arr1[i][j][k] * arr2[i][j][k]
 
             return res
