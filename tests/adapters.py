@@ -2,6 +2,7 @@ from typing import Any
 from jaxtyping import Float
 from therapml.basic_tensor import tensor_multiply, tensor_dot
 from therapml.optimizers import SGD, Adam
+from therapml.nn_blocks import ReLU, GELU, softmax, linear, swiglu
 from torch import Tensor
 
 def run_tensor_multiply(arr1: Float[List, "b x y"], arr2: Float[List, "b y z"]) -> Float[List, "b x z"]:
@@ -17,13 +18,13 @@ def get_adam_cls() -> Any:
     return Adam
 
 def run_relu(in_features: Float[Tensor, "..."]) -> Float[Tensor, "..."]:
-    raise NotImplementedError
+    return ReLU(in_features)
 
 def run_gelu(in_features: Float[Tensor, "..."]) -> Float[Tensor, "..."]:
-    raise NotImplementedError
+    return GELU(in_features)
 
 def run_softmax(in_features: Float[Tensor, "..."], dim: int) -> Float[Tensor, "..."]:
-    raise NotImplementedError
+    return softmax(in_features, dim)
 
 def run_linear(
     d_in: int,
@@ -31,7 +32,7 @@ def run_linear(
     weights: Float[Tensor, "d_out d_in"],
     in_features: Float[Tensor, "... d_in"],
 ) -> Float[Tensor, "... d_out"]:
-    raise NotImplementedError
+    return linear(d_in, d_out, weights, in_features)
 
 def run_swiglu(
     d_model: int,
@@ -41,7 +42,7 @@ def run_swiglu(
     w3_weight: Float[Tensor, " d_ff d_model"],
     in_features: Float[Tensor, " ... d_model"],
 ) -> Float[Tensor, " ... d_model"]:
-    raise NotImplementedError
+     return swiglu(d_model, d_ff, w1_weight, w2_weight, w3_weight, in_features)
 
 def run_cross_entropy_loss(
         logits: Float[Tensor, "batch output_dim"],
