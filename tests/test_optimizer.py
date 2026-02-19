@@ -2,13 +2,11 @@ import torch
 
 from .adapters import get_sgd_cls, get_adam_cls
 
+
 def _optimize(opt_class, cfg) -> torch.Tensor:
     torch.manual_seed(42)
     model = torch.nn.Linear(3, 2, bias=False)
-    opt = opt_class(
-        model.parameters(),
-        **cfg
-    )
+    opt = opt_class(model.parameters(), **cfg)
 
     # Use 1000 optimization steps for testing
     for _ in range(1000):
@@ -22,6 +20,7 @@ def _optimize(opt_class, cfg) -> torch.Tensor:
 
     return model.weight.detach()
 
+
 def test_sgd():
     cfg = dict(
         lr=1e-3,
@@ -32,6 +31,7 @@ def test_sgd():
     actual_weights = _optimize(get_sgd_cls(), cfg)
 
     assert torch.allclose(actual_weights, pytorch_weights, atol=1e-4)
+
 
 def test_adam():
     cfg = dict(

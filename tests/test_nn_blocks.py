@@ -15,11 +15,10 @@ class TestReLU:
         tensor = torch.from_numpy(relu_input)
         result = run_relu(tensor)
         result_np = result.detach().numpy() if isinstance(result, torch.Tensor) else result
-        
+
         # Check shape
-        assert result_np.shape == relu_input.shape, \
-            f"Expected shape {relu_input.shape}, got {result_np.shape}"
-        
+        assert result_np.shape == relu_input.shape, f"Expected shape {relu_input.shape}, got {result_np.shape}"
+
         # Check correctness against PyTorch
         expected = torch.relu(tensor).numpy()
         np.testing.assert_allclose(result_np, expected, rtol=1e-5, atol=1e-8)
@@ -34,11 +33,10 @@ class TestGELU:
         tensor = torch.from_numpy(gelu_input)
         result = run_gelu(tensor)
         result_np = result.detach().numpy() if isinstance(result, torch.Tensor) else result
-        
+
         # Check shape
-        assert result_np.shape == gelu_input.shape, \
-            f"Expected shape {gelu_input.shape}, got {result_np.shape}"
-        
+        assert result_np.shape == gelu_input.shape, f"Expected shape {gelu_input.shape}, got {result_np.shape}"
+
         # Check correctness against PyTorch
         expected = torch.nn.functional.gelu(tensor).numpy()
         np.testing.assert_allclose(result_np, expected, rtol=1e-4, atol=1e-6)
@@ -53,11 +51,10 @@ class TestSoftmax:
         tensor = torch.from_numpy(softmax_input)
         result = run_softmax(tensor, dim=1)
         result_np = result.detach().numpy() if isinstance(result, torch.Tensor) else result
-        
+
         # Check shape
-        assert result_np.shape == softmax_input.shape, \
-            f"Expected shape {softmax_input.shape}, got {result_np.shape}"
-        
+        assert result_np.shape == softmax_input.shape, f"Expected shape {softmax_input.shape}, got {result_np.shape}"
+
         # Check correctness against PyTorch
         expected = torch.nn.functional.softmax(tensor, dim=1).numpy()
         np.testing.assert_allclose(result_np, expected, rtol=1e-5, atol=1e-8)
@@ -79,20 +76,16 @@ class TestLinear:
     def test_linear_output(self, linear_data):
         input_tensor = torch.from_numpy(linear_data["input"])
         weights = torch.from_numpy(linear_data["weights"])
-        
+
         result = run_linear(
-            d_in=linear_data["d_in"],
-            d_out=linear_data["d_out"],
-            weights=weights,
-            in_features=input_tensor
+            d_in=linear_data["d_in"], d_out=linear_data["d_out"], weights=weights, in_features=input_tensor
         )
         result_np = result.detach().numpy() if isinstance(result, torch.Tensor) else result
-        
+
         # Check shape
         expected_shape = (linear_data["input"].shape[0], linear_data["d_out"])
-        assert result_np.shape == expected_shape, \
-            f"Expected shape {expected_shape}, got {result_np.shape}"
-        
+        assert result_np.shape == expected_shape, f"Expected shape {expected_shape}, got {result_np.shape}"
+
         # Check correctness against PyTorch
         expected = torch.nn.functional.linear(input_tensor, weights, bias=None).numpy()
         np.testing.assert_allclose(result_np, expected, rtol=1e-5, atol=1e-8)
@@ -122,25 +115,30 @@ class TestSwiGLU:
         w1 = torch.from_numpy(swiglu_data["w1_weight"])
         w2 = torch.from_numpy(swiglu_data["w2_weight"])
         w3 = torch.from_numpy(swiglu_data["w3_weight"])
-        
+
         result = run_swiglu(
             d_model=swiglu_data["d_model"],
             d_ff=swiglu_data["d_ff"],
             w1_weight=w1,
             w2_weight=w2,
             w3_weight=w3,
-            in_features=input_tensor
+            in_features=input_tensor,
         )
         result_np = result.detach().numpy() if isinstance(result, torch.Tensor) else result
-        
+
         # Check shape - output should have same shape as input (same d_model)
-        assert result_np.shape == swiglu_data["input"].shape, \
+        assert result_np.shape == swiglu_data["input"].shape, (
             f"Expected shape {swiglu_data['input'].shape}, got {result_np.shape}"
-        
+        )
+
         # Check output contains correct values
-        assert np.all(np.isfinite(result_np)), \
-            "SwiGLU output should contain only finite values"
-        
+        assert np.all(np.isfinite(result_np)), "SwiGLU output should contain only finite values"
+
         # Check against manually calculated expected output
-        np.testing.assert_allclose(result_np, swiglu_data["expected"], rtol=1e-5, atol=1e-8,
-            err_msg="SwiGLU output does not match expected calculated values")
+        np.testing.assert_allclose(
+            result_np,
+            swiglu_data["expected"],
+            rtol=1e-5,
+            atol=1e-8,
+            err_msg="SwiGLU output does not match expected calculated values",
+        )

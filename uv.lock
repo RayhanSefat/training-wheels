@@ -49,15 +49,6 @@ wheels = [
 ]
 
 [[package]]
-name = "einsum"
-version = "0.3.0"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/1e/16/371528e03f3a661ecaba4948205fb06c257bf9054eaddea089e72d56d58a/einsum-0.3.0.tar.gz", hash = "sha256:e19db2c02ad5ea8acf2926a9eab995ec1802a9db0bb39646d71e96f7cec14e31", size = 5152, upload-time = "2022-04-22T06:15:02.653Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/bd/91/d8c6ecbe3dfd2ddecbd08e095bc4388a71958a7e1c2dab772ca3daef50da/einsum-0.3.0-py3-none-any.whl", hash = "sha256:6d2b1f7932879d630969bfb599e09f8448dcbc38a2be6cee192b8a1ae02c52dc", size = 5100, upload-time = "2022-04-22T06:15:01.457Z" },
-]
-
-[[package]]
 name = "filelock"
 version = "3.20.3"
 source = { registry = "https://pypi.org/simple" }
@@ -538,16 +529,28 @@ wheels = [
 ]
 
 [[package]]
+name = "tqdm"
+version = "4.67.3"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "colorama", marker = "sys_platform == 'win32'" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/09/a9/6ba95a270c6f1fbcd8dac228323f2777d886cb206987444e4bce66338dd4/tqdm-4.67.3.tar.gz", hash = "sha256:7d825f03f89244ef73f1d4ce193cb1774a8179fd96f31d7e1dcde62092b960bb", size = 169598, upload-time = "2026-02-03T17:35:53.048Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/16/e1/3079a9ff9b8e11b846c6ac5c8b5bfb7ff225eee721825310c91b3b50304f/tqdm-4.67.3-py3-none-any.whl", hash = "sha256:ee1e4c0e59148062281c49d80b25b67771a127c85fc9676d3be5f243206826bf", size = 78374, upload-time = "2026-02-03T17:35:50.982Z" },
+]
+
+[[package]]
 name = "training-wheels"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "einops" },
-    { name = "einsum" },
     { name = "jaxtyping" },
     { name = "numpy" },
     { name = "pytest" },
     { name = "torch" },
+    { name = "tqdm" },
     { name = "typeguard" },
     { name = "typing-extensions" },
 ]
@@ -555,11 +558,11 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "einops", specifier = ">=0.8.2" },
-    { name = "einsum", specifier = ">=0.3.0" },
     { name = "jaxtyping", specifier = ">=0.3.7" },
     { name = "numpy", specifier = ">=2.4.2" },
     { name = "pytest", specifier = ">=9.0.2" },
     { name = "torch", specifier = ">=2.10.0" },
+    { name = "tqdm", specifier = ">=4.67.3" },
     { name = "typeguard", specifier = ">=4.5.0" },
     { name = "typing-extensions", specifier = ">=4.15.0" },
 ]
