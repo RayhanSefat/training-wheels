@@ -1,7 +1,7 @@
 from typing import Any
 from jaxtyping import Float
 from therapml.basic_tensor import tensor_multiply, tensor_dot
-from therapml.optimizers import SGD, Adam
+from therapml.optimizers import SGD, AdamW
 from therapml.nn_blocks import ReLU, GELU, softmax, linear, swiglu
 from therapml.loss import cross_entropy_loss
 from therapml.dropout import dropout
@@ -18,7 +18,7 @@ def get_sgd_cls() -> Any:
     return SGD
 
 def get_adam_cls() -> Any:
-    return Adam
+    return AdamW
 
 def run_relu(in_features: Float[Tensor, "..."]) -> Float[Tensor, "..."]:
     return ReLU(in_features)
