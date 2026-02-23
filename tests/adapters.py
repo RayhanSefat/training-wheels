@@ -6,6 +6,7 @@ from therapml.nn_blocks import ReLU, GELU, softmax, linear, swiglu
 from therapml.loss import cross_entropy_loss
 from therapml.dropout import dropout
 from therapml.norm import layer_norm, rms_norm
+from therapml.lm import rope, self_attention, multihead_self_attention, multihead_self_attention_with_rope
 from torch import Tensor
 
 def run_tensor_multiply(arr1: Float[List, "b x y"], arr2: Float[List, "b y z"]) -> Float[List, "b x z"]:
@@ -75,7 +76,7 @@ def run_rope(
     input_embeddings: Float[Tensor, "batch ctx_len embedding_dim"],
     token_positions: Int[Tensor, "batch ctx_len"],
 ) -> Float[Tensor, "batch ctx_len embedding_dim"]:
-    raise NotImplementedError
+    return rope(embedding_dim, theta, context_len, input_embeddings, token_positions)
 
 
 def run_self_attention(
@@ -87,7 +88,7 @@ def run_self_attention(
     """
     Note the number of dimensions here can be greater than 3
     """
-    raise NotImplementedError
+    return self_attention(Q, K, V, mask)
 
 
 def run_multihead_self_attention(
@@ -99,7 +100,15 @@ def run_multihead_self_attention(
     o_proj_weight: Float[Tensor, "d_model d_v"],
     in_features: Float[Tensor, "batch ctx_len d_in"],
 ) -> Float[Tensor, "batch ctx_len d_out"]:
-    raise NotImplementedError
+    return multihead_self_attention(
+        d_model,
+        num_heads,
+        q_proj_weight,
+        k_proj_weight,
+        v_proj_weight,
+        o_proj_weight,
+        in_features
+    )
 
 
 def run_multihead_self_attention_with_rope(
@@ -114,7 +123,18 @@ def run_multihead_self_attention_with_rope(
     in_features: Float[Tensor, "batch ctx_len d_in"],
     token_positions: Int[Tensor, "batch ctx_len"],
 ) -> Float[Tensor, "batch ctx_len d_out"]:
-    raise NotImplementedError
+    return multihead_self_attention_with_rope(
+        d_model,
+        num_heads,
+        ctx_len,
+        theta,
+        q_proj_weight,
+        k_proj_weight,
+        v_proj_weight,
+        o_proj_weight,
+        in_features,
+        token_positions
+    )
 
 
 def run_transformer_block(
