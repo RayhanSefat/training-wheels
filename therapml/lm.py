@@ -70,6 +70,8 @@ class MultiHeadSelfAttention(nn.Module):
         k = k.view(batch, seq_len, self.num_heads, d_head).transpose(1, 2).transpose(0, 1)
         v = v.view(batch, seq_len, self.num_heads, d_head).transpose(1, 2).transpose(0, 1)
 
-        contexts = [SelfAttention(k[i], v[i])(q[i]) for i in range(self.num_heads)]
+        causal_mask = torch.tril(torch.ones(seq_len, seq_len)).bool()
+
+        contexts = [SelfAttention(k[i], v[i], mask=causal_mask)(q[i]) for i in range(self.num_heads)]
         concatenated = torch.cat(contexts, dim=-1)
         return Linear(0, 0, self.o_weight)(concatenated)
