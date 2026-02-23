@@ -28,7 +28,7 @@ class Linear(nn.Module):
 
     def forward(self, in_features):
         weights_transposed = self.weight.T
-        return np.dot(in_features, weights_transposed)
+        return in_features @ weights_transposed
 
 class SwiGLU(nn.Module):
     def __init__(self, d_model, d_ff, w1_weight, w2_weight, w3_weight):

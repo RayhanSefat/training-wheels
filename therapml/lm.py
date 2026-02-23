@@ -46,50 +46,30 @@ class SelfAttention(nn.Module):
             scores = scores.masked_fill(self.mask == False, float("-inf"))
         
         attn_probs = softmax(scores, dim=-1)
-        return np.matmul(attn_probs, self.v)        
-
-def self_attention(q, k, v, mask=None):
-    d_k = q.shape[-1]
-    
-    scores = np.matmul(q, k.transpose(-2, -1)) / (d_k ** 0.5)
-    
-    if mask is not None:
-        scores = scores.masked_fill(mask == False, float("-inf"))
-    
-    attn_probs = softmax(scores, dim=-1)
-    return np.matmul(attn_probs, v)
+        return np.matmul(attn_probs, self.v)
 
 class MultiHeadSelfAttention(nn.Module):
     def __init__(self, d_model, num_heads, q_proj_weight, k_proj_weight, v_proj_weight, o_proj_weight):
-        super(MultiHeadSelfAttention, self).__init__()
-        self.d_model = d_model
+        super().__init__()
         self.num_heads = num_heads
-        self.q_proj_weight = q_proj_weight
-        self.k_proj_weight = k_proj_weight
-        self.v_proj_weight = v_proj_weight
-        self.o_proj_weight = o_proj_weight
+        self.d_model = d_model
+        self.q_weight = q_proj_weight
+        self.k_weight = k_proj_weight
+        self.v_weight = v_proj_weight
+        self.o_weight = o_proj_weight
 
     def forward(self, in_features):
-        batch_size, ctx_len, d_in = in_features.shape
+        batch, seq_len, d_in = in_features.shape
+        d_head = self.d_model // self.num_heads
 
-        q_proj = Linear(0, 0, self.q_proj_weight)(in_features)
-        k_proj = Linear(0, 0, self.k_proj_weight)(in_features)
-        v_proj = Linear(0, 0, self.v_proj_weight)(in_features)
+        q = Linear(0, 0, self.q_weight)(in_features)
+        k = Linear(0, 0, self.k_weight)(in_features)
+        v = Linear(0, 0, self.v_weight)(in_features)
 
-        d_k = q_proj.shape[-1]
-        d_head_k = d_k // self.num_heads
-        d_v = v_proj.shape[-1]
-        d_head_v = d_v // self.num_heads
+        q = q.view(batch, seq_len, self.num_heads, d_head).transpose(1, 2).transpose(0, 1)
+        k = k.view(batch, seq_len, self.num_heads, d_head).transpose(1, 2).transpose(0, 1)
+        v = v.view(batch, seq_len, self.num_heads, d_head).transpose(1, 2).transpose(0, 1)
 
-        q_proj = q_proj.reshape(batch_size, ctx_len, self.num_heads, d_head_k).transpose(0, 2, 1, 3)
-        k_proj = k_proj.reshape(batch_size, ctx_len, self.num_heads, d_head_k).transpose(0, 2, 1, 3)
-        v_proj = v_proj.reshape(batch_size, ctx_len, self.num_heads, d_head_v).transpose(0, 2, 1, 3)
-
-        score = np.matmul(q_proj, k_proj.transpose(0, 1, 3, 2)) / (d_head_k ** 0.5)
-        attn_weights = softmax(score, -1)
-
-        context = np.matmul(attn_weights, v_proj)
-        context = context.transpose(0, 2, 1, 3).reshape(batch_size, ctx_len, d_v)
-
-        output = Linear(0, 0, self.o_proj_weight)(context)
-        return output
+        contexts = [SelfAttention(k[i], v[i])(q[i]) for i in range(self.num_heads)]
+        concatenated = torch.cat(contexts, dim=-1)
+        return Linear(0, 0, self.o_weight)(concatenated)
