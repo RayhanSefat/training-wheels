@@ -121,7 +121,10 @@ def run_multihead_self_attention_with_rope(
     in_features: Float[Tensor, "batch ctx_len d_in"],
     token_positions: Int[Tensor, "batch ctx_len"],
 ) -> Float[Tensor, "batch ctx_len d_out"]:
-    raise NotImplementedError
+    d_head = d_model // num_heads
+    rope = RoPE(d_head, theta, ctx_len, token_positions)
+    multihead_attn_layer = MultiHeadSelfAttention(d_model, num_heads, q_proj_weight, k_proj_weight, v_proj_weight, o_proj_weight, rope=rope)
+    return multihead_attn_layer(in_features)
 
 
 def run_transformer_block(
