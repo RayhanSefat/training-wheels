@@ -4,17 +4,18 @@ import torch
 import torch.nn as nn
 
 class RoPE(nn.Module):
-    def __init__(self, embedding_dim, theta, context_len):
+    def __init__(self, embedding_dim, theta, context_len, token_positions):
         super(RoPE, self).__init__()
         self.embedding_dim = embedding_dim
         self.theta = theta
         self.context_len = context_len
+        self.token_positions = token_positions
 
-    def forward(self, input_embeddings, token_positions):
+    def forward(self, input_embeddings):
         dim_indices = np.arange(0, self.embedding_dim, 2)
         omega = 1.0 / (self.theta ** (dim_indices / self.embedding_dim))
         
-        m = token_positions.reshape(-1, 1)
+        m = self.token_positions.reshape(-1, 1)
         angles = m * omega
         
         cos = np.cos(angles)

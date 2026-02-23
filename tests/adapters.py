@@ -82,7 +82,7 @@ def run_rope(
     input_embeddings: Float[Tensor, "batch ctx_len embedding_dim"],
     token_positions: Int[Tensor, "batch ctx_len"],
 ) -> Float[Tensor, "batch ctx_len embedding_dim"]:
-    return RoPE(embedding_dim, theta, context_len)(input_embeddings, token_positions)
+    return RoPE(embedding_dim, theta, context_len, token_positions)(input_embeddings)
 
 def run_self_attention(
     Q: Float[Tensor, "... queries d_k"],
