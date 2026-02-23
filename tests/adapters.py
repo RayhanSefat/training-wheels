@@ -6,7 +6,7 @@ from therapml.nn_blocks import ReLU, GELU, softmax, Linear, SwiGLU
 from therapml.loss import CrossEntropyLoss
 from therapml.dropout import Dropout
 from therapml.norm import LayerNorm, RMSNorm
-from therapml.lm import rope, self_attention, multihead_self_attention, multihead_self_attention_with_rope
+from therapml.lm import RoPE, SelfAttention, MultiHeadSelfAttention
 from torch import Tensor
 
 def run_tensor_multiply(arr1: Float[List, "b x y"], arr2: Float[List, "b y z"]) -> Float[List, "b x z"]:
@@ -82,8 +82,7 @@ def run_rope(
     input_embeddings: Float[Tensor, "batch ctx_len embedding_dim"],
     token_positions: Int[Tensor, "batch ctx_len"],
 ) -> Float[Tensor, "batch ctx_len embedding_dim"]:
-    return rope(embedding_dim, theta, context_len, input_embeddings, token_positions)
-
+    return RoPE(embedding_dim, theta, context_len)(input_embeddings, token_positions)
 
 def run_self_attention(
     Q: Float[Tensor, "... queries d_k"],
@@ -94,7 +93,7 @@ def run_self_attention(
     """
     Note the number of dimensions here can be greater than 3
     """
-    return self_attention(Q, K, V, mask)
+    return SelfAttention(K, V, mask)(Q)
 
 
 def run_multihead_self_attention(
@@ -106,15 +105,8 @@ def run_multihead_self_attention(
     o_proj_weight: Float[Tensor, "d_model d_v"],
     in_features: Float[Tensor, "batch ctx_len d_in"],
 ) -> Float[Tensor, "batch ctx_len d_out"]:
-    return multihead_self_attention(
-        d_model,
-        num_heads,
-        q_proj_weight,
-        k_proj_weight,
-        v_proj_weight,
-        o_proj_weight,
-        in_features
-    )
+    multihead_attn_layer = MultiHeadSelfAttention(d_model, num_heads, q_proj_weight, k_proj_weight, v_proj_weight, o_proj_weight)
+    return multihead_attn_layer(in_features)
 
 
 def run_multihead_self_attention_with_rope(
@@ -129,18 +121,7 @@ def run_multihead_self_attention_with_rope(
     in_features: Float[Tensor, "batch ctx_len d_in"],
     token_positions: Int[Tensor, "batch ctx_len"],
 ) -> Float[Tensor, "batch ctx_len d_out"]:
-    return multihead_self_attention_with_rope(
-        d_model,
-        num_heads,
-        ctx_len,
-        theta,
-        q_proj_weight,
-        k_proj_weight,
-        v_proj_weight,
-        o_proj_weight,
-        in_features,
-        token_positions
-    )
+    raise NotImplementedError
 
 
 def run_transformer_block(
