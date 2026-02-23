@@ -1,22 +1,23 @@
-import numpy as np
 import torch
+import torch.nn as nn
+from .nn_blocks import softmax
 
-def cross_entropy_loss(logits, ground_truth, eps=1e-12):
-    if torch.is_tensor(logits):
-        logits = logits.detach().cpu().numpy()
-    if torch.is_tensor(ground_truth):
-        ground_truth = ground_truth.detach().cpu().numpy()
+class CrossEntropyLoss(nn.Module):
+    def __init__(self, ground_truth,eps=1e-12):
+        super(CrossEntropyLoss, self).__init__()
+        self.ground_truth = ground_truth
+        self.eps = eps
 
-    loss = 0.0
+    def forward(self, logits):
+        loss = 0.0
 
-    for i in range(logits.shape[0]):
-        shifted_logits = logits[i] - np.max(logits[i])
+        for i in range(logits.shape[0]):
+            shifted_logits = logits[i] - logits[i].max()
+            
+            softmax_probs = softmax(shifted_logits, dim=0)
+            
+            for j in range(logits.shape[1]):
+                if self.ground_truth[i][j] == 1:
+                    loss -= torch.log(torch.tensor(softmax_probs[j]) + self.eps)
         
-        exps = np.exp(shifted_logits)
-        softmax_probs = exps / np.sum(exps)
-        
-        for j in range(logits.shape[1]):
-            if ground_truth[i][j] == 1:
-                loss -= np.log(softmax_probs[j] + eps)
-    
-    return loss / logits.shape[0]
+        return loss / logits.shape[0]

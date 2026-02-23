@@ -1,5 +1,5 @@
 import numpy as np
-from .nn_blocks import softmax, linear
+from .nn_blocks import softmax, Linear
 
 def rope(embedding_dim, theta, context_len, input_embeddings, token_positions):
     dim_indices = np.arange(0, embedding_dim, 2)
@@ -42,9 +42,11 @@ def multihead_self_attention(d_model,
     ):
     batch_size, ctx_len, d_in = in_features.shape
 
-    q_proj = linear(0, 0, q_proj_weight, in_features) # batch_size x ctx_len x d_k
-    k_proj = linear(0, 0, k_proj_weight, in_features) # batch_size x ctx_len x d_k
-    v_proj = linear(0, 0, v_proj_weight, in_features) # batch_size x ctx_len x d_v
+
+
+    q_proj = Linear(0, 0, q_proj_weight)(in_features) # batch_size x ctx_len x d_k
+    k_proj = Linear(0, 0, k_proj_weight)(in_features) # batch_size x ctx_len x d_k
+    v_proj = Linear(0, 0, v_proj_weight)(in_features) # batch_size x ctx_len x d_v
 
     d_k = q_proj_weight.shape[-2]
     d_head_k = d_k // num_heads
@@ -61,7 +63,7 @@ def multihead_self_attention(d_model,
     context = np.matmul(attn_weights, v_proj) # batch_size x num_heads x ctx_len x d_head_v
     context = context.transpose(0, 2, 1, 3).reshape(batch_size, ctx_len, d_v) # batch_size x ctx_len x d_v
 
-    output = linear(0, 0, o_proj_weight, context) # batch_size x ctx_len x d_model
+    output = Linear(0, 0, o_proj_weight)(context) # batch_size x ctx_len x d_model
     return output
 
 def multihead_self_attention_with_rope(d_model,

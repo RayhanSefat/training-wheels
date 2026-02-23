@@ -2,10 +2,10 @@ from typing import Any
 from jaxtyping import Float, Int, Bool
 from therapml.basic_tensor import tensor_multiply, tensor_dot
 from therapml.optimizers import SGD, AdamW
-from therapml.nn_blocks import ReLU, GELU, softmax, linear, swiglu
-from therapml.loss import cross_entropy_loss
-from therapml.dropout import dropout
-from therapml.norm import layer_norm, rms_norm
+from therapml.nn_blocks import ReLU, GELU, softmax, Linear, SwiGLU
+from therapml.loss import CrossEntropyLoss
+from therapml.dropout import Dropout
+from therapml.norm import LayerNorm, RMSNorm
 from therapml.lm import rope, self_attention, multihead_self_attention, multihead_self_attention_with_rope
 from torch import Tensor
 
@@ -41,7 +41,8 @@ def run_linear(
     weights: Float[Tensor, "d_out d_in"],
     in_features: Float[Tensor, "... d_in"],
 ) -> Float[Tensor, "... d_out"]:
-    return linear(d_in, d_out, weights, in_features)
+    lineear_layer = Linear(d_in, d_out, weights)
+    return lineear_layer(in_features)
 
 
 def run_swiglu(
@@ -52,22 +53,27 @@ def run_swiglu(
     w3_weight: Float[Tensor, " d_ff d_model"],
     in_features: Float[Tensor, " ... d_model"],
 ) -> Float[Tensor, " ... d_model"]:
-     return swiglu(d_model, d_ff, w1_weight, w2_weight, w3_weight, in_features)
+    swiglu_layer = SwiGLU(d_model, d_ff, w1_weight, w2_weight, w3_weight)
+    return swiglu_layer(in_features)
 
 
 def run_cross_entropy_loss(
         logits: Float[Tensor, "batch output_dim"],
         ground_truth: Float[Tensor, "batch output_dim"]) -> Float[Tensor, ""]:
-    return cross_entropy_loss(logits, ground_truth)
-    
+    cross_entropy_loss_fn = CrossEntropyLoss(ground_truth)
+    return cross_entropy_loss_fn(logits)
+
 def run_dropout(input: Float[Tensor, "..."], prob: float) -> Float[Tensor, "..."]:
-    return dropout(input, prob)
+    dropout_layer = Dropout(prob)
+    return dropout_layer(input)
 
 def run_layernorm(input: Float[Tensor, "batch ..."], gamma: Float[Tensor, "batch ..."], beta: Float[Tensor, "batch ..."]) -> Float[Tensor, "batch ..."]:
-    return layer_norm(input, gamma, beta)
+    layernorm_layer = LayerNorm(gamma, beta)
+    return layernorm_layer(input)
 
 def run_rmsnorm(input: Float[Tensor, "batch ..."], gamma: Float[Tensor, "batch ..."]) -> Float[Tensor, "batch ..."]:
-    return rms_norm(input, gamma)
+    rmsnorm_layer = RMSNorm(gamma)
+    return rmsnorm_layer(input)
 
 def run_rope(
     embedding_dim: int,
