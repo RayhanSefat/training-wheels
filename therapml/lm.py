@@ -1,4 +1,3 @@
-import numpy as np
 from .nn_blocks import softmax, Linear
 import torch
 import torch.nn as nn
@@ -11,11 +10,10 @@ class RoPE(nn.Module):
         self.token_positions = token_positions
 
     def forward(self, x):
-        device = x.device
-        dim_indices = torch.arange(0, self.embedding_dim, 2, device=device).float()
+        dim_indices = torch.arange(0, self.embedding_dim, 2).float()
         omega = 1.0 / (self.theta ** (dim_indices / self.embedding_dim))
         
-        m = self.token_positions.to(device).reshape(-1, 1).float()
+        m = self.token_positions.reshape(-1, 1).float()
         angles = m * omega # Broadcasting: [seq_len, 1] * [d_head/2] -> [seq_len, d_head/2]
         
         cos = angles.cos()
