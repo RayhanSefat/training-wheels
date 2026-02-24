@@ -40,14 +40,14 @@ class SwiGLU(nn.Module):
         self.w3_weight = w3_weight
 
     def SiLU(self, in_features):
-        data = np.asanyarray(in_features)
-        return data / (1 + np.exp(-data))
+        data = torch.as_tensor(in_features)
+        return data * torch.sigmoid(data)
 
     def forward(self, in_features):
-        gate = np.dot(in_features, self.w1_weight.T)
+        gate = torch.matmul(in_features, self.w1_weight.T)
         gate_activated = self.SiLU(gate)
 
-        value = np.dot(in_features, self.w3_weight.T)
+        value = torch.matmul(in_features, self.w3_weight.T)
 
         output = gate_activated * value
-        return np.dot(output, self.w2_weight.T)
+        return torch.matmul(output, self.w2_weight.T)
