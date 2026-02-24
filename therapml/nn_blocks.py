@@ -4,20 +4,20 @@ import torch.nn as nn
 from scipy.special import erf
 
 def ReLU(in_features):
-    data = np.asanyarray(in_features)
+    data = torch.as_tensor(in_features)
 
-    return np.maximum(data, 0)
+    return torch.maximum(data, torch.tensor(0.0))
 
 def GELU(in_features):
-    data = np.asanyarray(in_features)
+    data = torch.as_tensor(in_features)
     
-    return 0.5 * data * (1 + erf(data / np.sqrt(2)))
+    return 0.5 * data * (1 + erf(data / torch.sqrt(torch.tensor(2.0))))
 
 def softmax(in_features, dim):
-    data = np.asanyarray(in_features)
+    data = torch.as_tensor(in_features)
     
-    exp_data = np.exp(data - np.max(data, axis=dim, keepdims=True))
-    return exp_data / np.sum(exp_data, axis=dim, keepdims=True)
+    exp_data = torch.exp(data - torch.max(data, dim=dim, keepdim=True)[0])
+    return exp_data / torch.sum(exp_data, dim=dim, keepdim=True)
 
 class Linear(nn.Module):
     def __init__(self, d_in, d_out, weight):
