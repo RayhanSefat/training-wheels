@@ -1,6 +1,7 @@
-from .nn_blocks import softmax, Linear
+from .nn_blocks import softmax, Linear, SwiGLU
 import torch
 import torch.nn as nn
+from torch import Tensor
 
 class RoPE(nn.Module):
     def __init__(self, embedding_dim, theta, context_len, token_positions):
@@ -55,7 +56,7 @@ class SelfAttention(nn.Module):
         return torch.matmul(attn_probs, self.v)
 
 class MultiHeadSelfAttention(nn.Module):
-    def __init__(self, d_model, num_heads, q_proj_weight, k_proj_weight, v_proj_weight, o_proj_weight, rope=None):
+    def __init__(self, d_model, num_heads, q_proj_weight, k_proj_weight, v_proj_weight, o_proj_weight, mask=None, rope=None):
         super().__init__()
         self.num_heads = num_heads
         self.d_model = d_model
@@ -63,6 +64,7 @@ class MultiHeadSelfAttention(nn.Module):
         self.k_weight = k_proj_weight
         self.v_weight = v_proj_weight
         self.o_weight = o_proj_weight
+        self.mask = mask
         self.rope = rope
 
     def forward(self, in_features):
@@ -77,8 +79,6 @@ class MultiHeadSelfAttention(nn.Module):
         k = k.view(batch, seq_len, self.num_heads, d_head).transpose(1, 2).transpose(0, 1)
         v = v.view(batch, seq_len, self.num_heads, d_head).transpose(1, 2).transpose(0, 1)
 
-        causal_mask = torch.tril(torch.ones(seq_len, seq_len)).bool()
-
-        contexts = [SelfAttention(k[i], v[i], mask=causal_mask, rope=self.rope)(q[i]) for i in range(self.num_heads)]
+        contexts = [SelfAttention(k[i], v[i], mask=self.mask, rope=self.rope)(q[i]) for i in range(self.num_heads)]
         concatenated = torch.cat(contexts, dim=-1)
         return Linear(0, 0, self.o_weight)(concatenated)

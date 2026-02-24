@@ -8,6 +8,7 @@ from therapml.dropout import Dropout
 from therapml.norm import LayerNorm, RMSNorm
 from therapml.lm import RoPE, SelfAttention, MultiHeadSelfAttention
 from torch import Tensor
+import torch
 
 def run_tensor_multiply(arr1: Float[List, "b x y"], arr2: Float[List, "b y z"]) -> Float[List, "b x z"]:
     return tensor_multiply(arr1, arr2)
@@ -123,7 +124,8 @@ def run_multihead_self_attention_with_rope(
 ) -> Float[Tensor, "batch ctx_len d_out"]:
     d_head = d_model // num_heads
     rope = RoPE(d_head, theta, ctx_len, token_positions)
-    multihead_attn_layer = MultiHeadSelfAttention(d_model, num_heads, q_proj_weight, k_proj_weight, v_proj_weight, o_proj_weight, rope=rope)
+    causal_mask = torch.tril(torch.ones(in_features.shape[1], in_features.shape[1])).bool()
+    multihead_attn_layer = MultiHeadSelfAttention(d_model, num_heads, q_proj_weight, k_proj_weight, v_proj_weight, o_proj_weight, mask=causal_mask, rope=rope)
     return multihead_attn_layer(in_features)
 
 
