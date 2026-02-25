@@ -71,19 +71,27 @@ class MultiHeadSelfAttention(nn.Module):
         self.rope = rope
 
     def __get_qkv(self, in_features):
-        linear_obj = Linear(self.d_in, self.d_model)
-        linear_obj.load_state_dict({
-            "weight": self.q_weight
+        linear_q = Linear(self.d_in, self.d_model)
+        linear_q.load_state_dict({
+            "weight": self.q_weight,
+            "bias": torch.zeros(self.d_model)
         })
-        q = linear_obj(in_features)
-        linear_obj.load_state_dict({
-            "weight": self.k_weight
+        q = linear_q(in_features)
+        
+        linear_k = Linear(self.d_in, self.d_model)
+        linear_k.load_state_dict({
+            "weight": self.k_weight,
+            "bias": torch.zeros(self.d_k)
         })
-        k = linear_obj(in_features)
-        linear_obj.load_state_dict({
-            "weight": self.v_weight
+        k = linear_k(in_features)
+        
+        linear_v = Linear(self.d_in, self.d_v)
+        linear_v.load_state_dict({
+            "weight": self.v_weight,
+            "bias": torch.zeros(self.d_v)
         })
-        v = linear_obj(in_features)
+        v = linear_v(in_features)
+        
         return q, k, v
 
     def forward(self, in_features):
@@ -101,7 +109,8 @@ class MultiHeadSelfAttention(nn.Module):
         
         linear_out = Linear(self.d_model, self.d_model)
         linear_out.load_state_dict({
-            "weight": self.o_weight
+            "weight": self.o_weight,
+            "bias": torch.zeros(self.d_model)
         })
         return linear_out(concatenated)
 
