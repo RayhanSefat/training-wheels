@@ -112,15 +112,15 @@ class TransformerBlock(nn.Module):
         self.num_heads = num_heads
         self.d_ff = d_ff
         self.ctx_len = ctx_len
-        self.q_proj_weight = weights["attn.q_proj.weight"]
-        self.k_proj_weight = weights["attn.k_proj.weight"]
-        self.v_proj_weight = weights["attn.v_proj.weight"]
-        self.o_proj_weight = weights["attn.output_proj.weight"]
-        self.ln1_weight = weights["ln1.weight"]
-        self.ffn_w1_weight = weights["ffn.w1.weight"]
-        self.ffn_w2_weight = weights["ffn.w2.weight"]
-        self.ffn_w3_weight = weights["ffn.w3.weight"]
-        self.ln2_weight = weights["ln2.weight"]
+        self.q_proj_weight = nn.Parameter(torch.empty_like(weights["attn.q_proj.weight"]))
+        self.k_proj_weight = nn.Parameter(torch.empty_like(weights["attn.k_proj.weight"]))
+        self.v_proj_weight = nn.Parameter(torch.empty_like(weights["attn.v_proj.weight"]))
+        self.o_proj_weight = nn.Parameter(torch.empty_like(weights["attn.output_proj.weight"]))
+        self.ffn_w1_weight = nn.Parameter(torch.empty_like(weights["ffn.w1.weight"]))
+        self.ffn_w2_weight = nn.Parameter(torch.empty_like(weights["ffn.w2.weight"]))
+        self.ffn_w3_weight = nn.Parameter(torch.empty_like(weights["ffn.w3.weight"]))
+        self.ln1_weight = nn.Parameter(torch.empty_like(weights["ln1.weight"]))
+        self.ln2_weight = nn.Parameter(torch.empty_like(weights["ln2.weight"]))
         self.rope = rope
 
     def __get_attention(self, mask=None):

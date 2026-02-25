@@ -226,7 +226,20 @@ def run_transformer_block(
     actual_seq_len = in_features.shape[1]
     rope = RoPE(d_model // num_heads, theta, ctx_len, torch.arange(actual_seq_len, device=in_features.device))
     
-    return TransformerBlock(d_model, num_heads, d_ff, ctx_len, weights, rope=rope)(in_features)
+    transformer_block = TransformerBlock(d_model, num_heads, d_ff, ctx_len, weights, rope=rope)
+    transformer_block.load_state_dict({
+        "q_proj_weight": weights["attn.q_proj.weight"],
+        "k_proj_weight": weights["attn.k_proj.weight"],
+        "v_proj_weight": weights["attn.v_proj.weight"],
+        "o_proj_weight": weights["attn.output_proj.weight"],
+        "ln1_weight": weights["ln1.weight"],
+        "ffn_w1_weight": weights["ffn.w1.weight"],
+        "ffn_w2_weight": weights["ffn.w2.weight"],
+        "ffn_w3_weight": weights["ffn.w3.weight"],
+        "ln2_weight": weights["ln2.weight"]
+    })
+
+    return transformer_block(in_features)
 
 
 def run_transformer_lm(
