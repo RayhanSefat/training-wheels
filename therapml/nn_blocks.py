@@ -20,24 +20,26 @@ def softmax(in_features, dim):
     return exp_data / torch.sum(exp_data, dim=dim, keepdim=True)
 
 class Linear(nn.Module):
-    def __init__(self, d_in, d_out, weight):
+    def __init__(self, d_in, d_out):
         super(Linear, self).__init__()
         self.d_in = d_in
         self.d_out = d_out
-        self.weight = weight
+
+        self.weight = nn.Parameter(torch.empty(d_out, d_in))
 
     def forward(self, in_features):
         weights_transposed = self.weight.T
         return in_features @ weights_transposed
 
 class SwiGLU(nn.Module):
-    def __init__(self, d_model, d_ff, w1_weight, w2_weight, w3_weight):
+    def __init__(self, d_model, d_ff):
         super(SwiGLU, self).__init__()
         self.d_model = d_model
         self.d_ff = d_ff
-        self.w1_weight = w1_weight
-        self.w2_weight = w2_weight
-        self.w3_weight = w3_weight
+        
+        self.w1_weight = nn.Parameter(torch.empty(d_ff, d_model))
+        self.w2_weight = nn.Parameter(torch.empty(d_model, d_ff))
+        self.w3_weight = nn.Parameter(torch.empty(d_ff, d_model))
 
     def SiLU(self, in_features):
         data = torch.as_tensor(in_features)

@@ -42,7 +42,8 @@ def run_linear(
     weights: Float[Tensor, "d_out d_in"],
     in_features: Float[Tensor, "... d_in"],
 ) -> Float[Tensor, "... d_out"]:
-    lineear_layer = Linear(d_in, d_out, weights)
+    lineear_layer = Linear(d_in, d_out)
+    lineear_layer.load_state_dict({"weight": weights})
     return lineear_layer(in_features)
 
 
@@ -54,7 +55,12 @@ def run_swiglu(
     w3_weight: Float[Tensor, " d_ff d_model"],
     in_features: Float[Tensor, " ... d_model"],
 ) -> Float[Tensor, " ... d_model"]:
-    swiglu_layer = SwiGLU(d_model, d_ff, w1_weight, w2_weight, w3_weight)
+    swiglu_layer = SwiGLU(d_model, d_ff)
+    swiglu_layer.load_state_dict({
+        "w1_weight": w1_weight,
+        "w2_weight": w2_weight,
+        "w3_weight": w3_weight
+    })
     return swiglu_layer(in_features)
 
 
@@ -107,7 +113,16 @@ def run_multihead_self_attention(
     in_features: Float[Tensor, "batch ctx_len d_in"],
 ) -> Float[Tensor, "batch ctx_len d_out"]:
     causal_mask = torch.tril(torch.ones(in_features.shape[1], in_features.shape[1])).bool()
-    multihead_attn_layer = MultiHeadSelfAttention(d_model, num_heads, q_proj_weight, k_proj_weight, v_proj_weight, o_proj_weight, mask=causal_mask)
+    d_k = q_proj_weight.shape[0]
+    d_v = v_proj_weight.shape[0]
+    d_in = q_proj_weight.shape[1]
+    multihead_attn_layer = MultiHeadSelfAttention(d_model, num_heads, d_k, d_v, d_in, mask=causal_mask)
+    multihead_attn_layer.load_state_dict({
+        "q_weight": q_proj_weight,
+        "k_weight": k_proj_weight,
+        "v_weight": v_proj_weight,
+        "o_weight": o_proj_weight
+    })
     return multihead_attn_layer(in_features)
 
 
@@ -126,7 +141,16 @@ def run_multihead_self_attention_with_rope(
     d_head = d_model // num_heads
     rope = RoPE(d_head, theta, ctx_len, token_positions)
     causal_mask = torch.tril(torch.ones(in_features.shape[1], in_features.shape[1])).bool()
-    multihead_attn_layer = MultiHeadSelfAttention(d_model, num_heads, q_proj_weight, k_proj_weight, v_proj_weight, o_proj_weight, mask=causal_mask, rope=rope)
+    d_k = q_proj_weight.shape[0]
+    d_v = v_proj_weight.shape[0]
+    d_in = q_proj_weight.shape[1]
+    multihead_attn_layer = MultiHeadSelfAttention(d_model, num_heads, d_k, d_v, d_in, mask=causal_mask, rope=rope)
+    multihead_attn_layer.load_state_dict({
+        "q_weight": q_proj_weight,
+        "k_weight": k_proj_weight,
+        "v_weight": v_proj_weight,
+        "o_weight": o_proj_weight
+    })
     return multihead_attn_layer(in_features)
 
 

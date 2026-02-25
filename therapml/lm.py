@@ -56,24 +56,41 @@ class SelfAttention(nn.Module):
         return torch.matmul(attn_probs, self.v)
 
 class MultiHeadSelfAttention(nn.Module):
-    def __init__(self, d_model, num_heads, q_proj_weight, k_proj_weight, v_proj_weight, o_proj_weight, mask=None, rope=None):
+    def __init__(self, d_model, num_heads, d_k, d_v, d_in, mask=None, rope=None):
         super().__init__()
         self.num_heads = num_heads
         self.d_model = d_model
-        self.q_weight = q_proj_weight
-        self.k_weight = k_proj_weight
-        self.v_weight = v_proj_weight
-        self.o_weight = o_proj_weight
+        self.d_k = d_k
+        self.d_v = d_v
+        self.d_in = d_in
+        self.q_weight = nn.Parameter(torch.empty(d_k, d_in))
+        self.k_weight = nn.Parameter(torch.empty(d_k, d_in))
+        self.v_weight = nn.Parameter(torch.empty(d_v, d_in))
+        self.o_weight = nn.Parameter(torch.empty(d_model, d_v))
         self.mask = mask
         self.rope = rope
+
+    def __get_qkv(self, in_features):
+        linear_obj = Linear(self.d_in, self.d_model)
+        linear_obj.load_state_dict({
+            "weight": self.q_weight
+        })
+        q = linear_obj(in_features)
+        linear_obj.load_state_dict({
+            "weight": self.k_weight
+        })
+        k = linear_obj(in_features)
+        linear_obj.load_state_dict({
+            "weight": self.v_weight
+        })
+        v = linear_obj(in_features)
+        return q, k, v
 
     def forward(self, in_features):
         batch, seq_len, d_in = in_features.shape
         d_head = self.d_model // self.num_heads
 
-        q = Linear(0, 0, self.q_weight)(in_features)
-        k = Linear(0, 0, self.k_weight)(in_features)
-        v = Linear(0, 0, self.v_weight)(in_features)
+        q, k, v = self.__get_qkv(in_features)
 
         q = q.view(batch, seq_len, self.num_heads, d_head).transpose(1, 2).transpose(0, 1)
         k = k.view(batch, seq_len, self.num_heads, d_head).transpose(1, 2).transpose(0, 1)
@@ -81,7 +98,12 @@ class MultiHeadSelfAttention(nn.Module):
 
         contexts = [SelfAttention(k[i], v[i], mask=self.mask, rope=self.rope)(q[i]) for i in range(self.num_heads)]
         concatenated = torch.cat(contexts, dim=-1)
-        return Linear(0, 0, self.o_weight)(concatenated)
+        
+        linear_out = Linear(self.d_model, self.d_model)
+        linear_out.load_state_dict({
+            "weight": self.o_weight
+        })
+        return linear_out(concatenated)
 
 class TransformerBlock(nn.Module):
     def __init__(self, d_model, num_heads, d_ff, ctx_len, weights, rope=None):
@@ -102,22 +124,39 @@ class TransformerBlock(nn.Module):
         self.rope = rope
 
     def __get_attention(self, mask=None):
-        return MultiHeadSelfAttention(
+        multihead_self_attn = MultiHeadSelfAttention(
             d_model=self.d_model,
             num_heads=self.num_heads,
-            q_proj_weight=self.q_proj_weight,
-            k_proj_weight=self.k_proj_weight,
-            v_proj_weight=self.v_proj_weight,
-            o_proj_weight=self.o_proj_weight,
+            d_k=self.q_proj_weight.shape[0],
+            d_v=self.v_proj_weight.shape[0],
+            d_in=self.q_proj_weight.shape[1],
             mask=mask,
             rope=self.rope
         )
+
+        multihead_self_attn.load_state_dict({
+            "q_weight": self.q_proj_weight,
+            "k_weight": self.k_proj_weight,
+            "v_weight": self.v_proj_weight,
+            "o_weight": self.o_proj_weight
+        })
+        
+        return multihead_self_attn
 
     def __get_attn_output(self, x):
         seq_len = x.shape[1]
         causal_mask = torch.tril(torch.ones(seq_len, seq_len)).bool()
         attention = self.__get_attention(mask=causal_mask)
         return attention(x)
+
+    def __get_ffn_output(self, x):
+        swiglu_layer = SwiGLU(self.d_model, self.d_ff)
+        swiglu_layer.load_state_dict({
+            "w1_weight": self.ffn_w1_weight,
+            "w2_weight": self.ffn_w2_weight,
+            "w3_weight": self.ffn_w3_weight
+        })
+        return swiglu_layer(x)
 
     def forward(self, x):
         ln1_wgt = [[self.ln1_weight for _ in range(x.shape[1])] for _ in range(x.shape[0])]
@@ -129,7 +168,7 @@ class TransformerBlock(nn.Module):
         h = x + attn_output
 
         norm_h = RMSNorm(ln2_wgt)(h)
-        ffn_output = SwiGLU(self.d_model, self.d_ff, self.ffn_w1_weight, self.ffn_w2_weight, self.ffn_w3_weight)(norm_h)
+        ffn_output = self.__get_ffn_output(norm_h)
 
         out = h + ffn_output
 
