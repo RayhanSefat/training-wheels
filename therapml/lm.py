@@ -1,7 +1,7 @@
 from .nn_blocks import softmax, Linear, SwiGLU
+from .norm import LayerNorm, RMSNorm
 import torch
 import torch.nn as nn
-from torch import Tensor
 
 class RoPE(nn.Module):
     def __init__(self, embedding_dim, theta, context_len, token_positions):
@@ -82,3 +82,55 @@ class MultiHeadSelfAttention(nn.Module):
         contexts = [SelfAttention(k[i], v[i], mask=self.mask, rope=self.rope)(q[i]) for i in range(self.num_heads)]
         concatenated = torch.cat(contexts, dim=-1)
         return Linear(0, 0, self.o_weight)(concatenated)
+
+class TransformerBlock(nn.Module):
+    def __init__(self, d_model, num_heads, d_ff, ctx_len, weights, rope=None):
+        super(TransformerBlock, self).__init__()
+        self.d_model = d_model
+        self.num_heads = num_heads
+        self.d_ff = d_ff
+        self.ctx_len = ctx_len
+        self.q_proj_weight = weights["attn.q_proj.weight"]
+        self.k_proj_weight = weights["attn.k_proj.weight"]
+        self.v_proj_weight = weights["attn.v_proj.weight"]
+        self.o_proj_weight = weights["attn.output_proj.weight"]
+        self.ln1_weight = weights["ln1.weight"]
+        self.ffn_w1_weight = weights["ffn.w1.weight"]
+        self.ffn_w2_weight = weights["ffn.w2.weight"]
+        self.ffn_w3_weight = weights["ffn.w3.weight"]
+        self.ln2_weight = weights["ln2.weight"]
+        self.rope = rope
+
+    def __get_attention(self, mask=None):
+        return MultiHeadSelfAttention(
+            d_model=self.d_model,
+            num_heads=self.num_heads,
+            q_proj_weight=self.q_proj_weight,
+            k_proj_weight=self.k_proj_weight,
+            v_proj_weight=self.v_proj_weight,
+            o_proj_weight=self.o_proj_weight,
+            mask=mask,
+            rope=self.rope
+        )
+
+    def __get_attn_output(self, x):
+        seq_len = x.shape[1]
+        causal_mask = torch.tril(torch.ones(seq_len, seq_len)).bool()
+        attention = self.__get_attention(mask=causal_mask)
+        return attention(x)
+
+    def forward(self, x):
+        ln1_wgt = [[self.ln1_weight for _ in range(x.shape[1])] for _ in range(x.shape[0])]
+        ln2_wgt = [[self.ln2_weight for _ in range(x.shape[1])] for _ in range(x.shape[0])]
+
+        norm_x = RMSNorm(ln1_wgt)(x)
+        attn_output = self.__get_attn_output(norm_x)
+
+        h = x + attn_output
+
+        norm_h = RMSNorm(ln2_wgt)(h)
+        ffn_output = SwiGLU(self.d_model, self.d_ff, self.ffn_w1_weight, self.ffn_w2_weight, self.ffn_w3_weight)(norm_h)
+
+        out = h + ffn_output
+
+        return out

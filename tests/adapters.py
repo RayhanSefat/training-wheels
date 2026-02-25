@@ -6,7 +6,7 @@ from therapml.nn_blocks import ReLU, GELU, softmax, Linear, SwiGLU
 from therapml.loss import CrossEntropyLoss
 from therapml.dropout import Dropout
 from therapml.norm import LayerNorm, RMSNorm
-from therapml.lm import RoPE, SelfAttention, MultiHeadSelfAttention
+from therapml.lm import RoPE, SelfAttention, MultiHeadSelfAttention, TransformerBlock
 from torch import Tensor
 import torch
 
@@ -106,7 +106,8 @@ def run_multihead_self_attention(
     o_proj_weight: Float[Tensor, "d_model d_v"],
     in_features: Float[Tensor, "batch ctx_len d_in"],
 ) -> Float[Tensor, "batch ctx_len d_out"]:
-    multihead_attn_layer = MultiHeadSelfAttention(d_model, num_heads, q_proj_weight, k_proj_weight, v_proj_weight, o_proj_weight)
+    causal_mask = torch.tril(torch.ones(in_features.shape[1], in_features.shape[1])).bool()
+    multihead_attn_layer = MultiHeadSelfAttention(d_model, num_heads, q_proj_weight, k_proj_weight, v_proj_weight, o_proj_weight, mask=causal_mask)
     return multihead_attn_layer(in_features)
 
 
@@ -198,7 +199,10 @@ def run_transformer_block(
         Float[Tensor, "batch sequence_length d_model"] Tensor with the output of
         running the Transformer block on the input features while using RoPE.
     """
-    raise NotImplementedError
+    actual_seq_len = in_features.shape[1]
+    rope = RoPE(d_model // num_heads, theta, ctx_len, torch.arange(actual_seq_len, device=in_features.device))
+    
+    return TransformerBlock(d_model, num_heads, d_ff, ctx_len, weights, rope=rope)(in_features)
 
 
 def run_transformer_lm(
