@@ -121,7 +121,11 @@ def run_multihead_self_attention(
         "q_weight": q_proj_weight,
         "k_weight": k_proj_weight,
         "v_weight": v_proj_weight,
-        "o_weight": o_proj_weight
+        "o_weight": o_proj_weight,
+        "q_bias": torch.zeros(d_k),
+        "k_bias": torch.zeros(d_k),
+        "v_bias": torch.zeros(d_v),
+        "o_bias": torch.zeros(d_model)
     })
     return multihead_attn_layer(in_features)
 
@@ -149,7 +153,11 @@ def run_multihead_self_attention_with_rope(
         "q_weight": q_proj_weight,
         "k_weight": k_proj_weight,
         "v_weight": v_proj_weight,
-        "o_weight": o_proj_weight
+        "o_weight": o_proj_weight,
+        "q_bias": torch.zeros(d_k),
+        "k_bias": torch.zeros(d_k),
+        "v_bias": torch.zeros(d_v),
+        "o_bias": torch.zeros(d_model)
     })
     return multihead_attn_layer(in_features)
 

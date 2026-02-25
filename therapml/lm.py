@@ -67,6 +67,10 @@ class MultiHeadSelfAttention(nn.Module):
         self.k_weight = nn.Parameter(torch.empty(d_k, d_in))
         self.v_weight = nn.Parameter(torch.empty(d_v, d_in))
         self.o_weight = nn.Parameter(torch.empty(d_model, d_v))
+        self.q_bias = nn.Parameter(torch.zeros(d_k))
+        self.k_bias = nn.Parameter(torch.zeros(d_k))
+        self.v_bias = nn.Parameter(torch.zeros(d_v))
+        self.o_bias = nn.Parameter(torch.zeros(d_model))
         self.mask = mask
         self.rope = rope
 
@@ -74,21 +78,21 @@ class MultiHeadSelfAttention(nn.Module):
         linear_q = Linear(self.d_in, self.d_model)
         linear_q.load_state_dict({
             "weight": self.q_weight,
-            "bias": torch.zeros(self.d_model)
+            "bias": self.q_bias
         })
         q = linear_q(in_features)
         
         linear_k = Linear(self.d_in, self.d_model)
         linear_k.load_state_dict({
             "weight": self.k_weight,
-            "bias": torch.zeros(self.d_k)
+            "bias": self.k_bias
         })
         k = linear_k(in_features)
         
         linear_v = Linear(self.d_in, self.d_v)
         linear_v.load_state_dict({
             "weight": self.v_weight,
-            "bias": torch.zeros(self.d_v)
+            "bias": self.v_bias
         })
         v = linear_v(in_features)
         
@@ -110,7 +114,7 @@ class MultiHeadSelfAttention(nn.Module):
         linear_out = Linear(self.d_model, self.d_model)
         linear_out.load_state_dict({
             "weight": self.o_weight,
-            "bias": torch.zeros(self.d_model)
+            "bias": self.o_bias
         })
         return linear_out(concatenated)
 
@@ -147,7 +151,11 @@ class TransformerBlock(nn.Module):
             "q_weight": self.q_proj_weight,
             "k_weight": self.k_proj_weight,
             "v_weight": self.v_proj_weight,
-            "o_weight": self.o_proj_weight
+            "o_weight": self.o_proj_weight,
+            "q_bias": torch.zeros_like(self.q_proj_weight[:, 0]),
+            "k_bias": torch.zeros_like(self.k_proj_weight[:, 0]),
+            "v_bias": torch.zeros_like(self.v_proj_weight[:, 0]),
+            "o_bias": torch.zeros_like(self.o_proj_weight[:, 0])
         })
         
         return multihead_self_attn
