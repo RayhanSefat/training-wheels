@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 
 class LayerNorm(nn.Module):
-    def __init__(self, gamma, beta, eps=1e-5):
+    def __init__(self, gamma, beta, eps=5e-6):
         super(LayerNorm, self).__init__()
         self.gamma = gamma
         self.beta = beta
@@ -22,7 +22,7 @@ class LayerNorm(nn.Module):
         return result
 
 class RMSNorm(nn.Module):
-    def __init__(self, gamma, eps=1e-5):
+    def __init__(self, gamma, eps=5e-6):
         super(RMSNorm, self).__init__()
         self.gamma = gamma
         self.eps = eps
