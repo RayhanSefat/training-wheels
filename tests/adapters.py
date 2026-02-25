@@ -43,7 +43,7 @@ def run_linear(
     in_features: Float[Tensor, "... d_in"],
 ) -> Float[Tensor, "... d_out"]:
     lineear_layer = Linear(d_in, d_out)
-    lineear_layer.load_state_dict({"weight": weights})
+    lineear_layer.load_state_dict({"weight": weights, "bias": torch.zeros(d_out)})
     return lineear_layer(in_features)
 
 

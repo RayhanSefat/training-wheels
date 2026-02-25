@@ -1,4 +1,3 @@
-import numpy as np
 import torch
 import torch.nn as nn
 from scipy.special import erf
@@ -26,10 +25,11 @@ class Linear(nn.Module):
         self.d_out = d_out
 
         self.weight = nn.Parameter(torch.empty(d_out, d_in))
+        self.bias = nn.Parameter(torch.empty(d_out))
 
     def forward(self, in_features):
         weights_transposed = self.weight.T
-        return in_features @ weights_transposed
+        return in_features @ weights_transposed + self.bias
 
 class SwiGLU(nn.Module):
     def __init__(self, d_model, d_ff):
