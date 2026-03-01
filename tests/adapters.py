@@ -9,9 +9,16 @@ from therapml.norm import LayerNorm, RMSNorm
 from therapml.lm import RoPE, SelfAttention, MultiHeadSelfAttention, TransformerBlock, TransformerLM
 from torch import Tensor
 import torch
+import sys
+import os
+
+parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+sys.path.insert(0, parent_dir) 
+
+import tensor_lib
 
 def run_tensor_multiply(arr1: Float[List, "b x y"], arr2: Float[List, "b y z"]) -> Float[List, "b x z"]:
-    return tensor_multiply(arr1, arr2)
+    return tensor_lib.tensor_multiply(arr1, arr2)
 
 def run_tensor_dot(arr1: Float[List, "..."], arr2: Float[List, "..."], dim: int):
     return tensor_dot(arr1, arr2, dim)
