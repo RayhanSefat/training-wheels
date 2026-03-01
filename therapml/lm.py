@@ -1,5 +1,6 @@
 from .nn_blocks import softmax, Linear, SwiGLU
 from .norm import LayerNorm, RMSNorm
+from .optimizers import AdamW
 import torch
 import torch.nn as nn
 
@@ -190,3 +191,67 @@ class TransformerBlock(nn.Module):
         out = h + ffn_output
 
         return out
+
+class TransformerLM(nn.Module):
+    def __init__(self, vocab_size, context_length, d_model, num_layers, num_heads, d_ff, rope=None, weights=None):
+        super(TransformerLM, self).__init__()
+        self.vocab_size = vocab_size
+        self.context_length = context_length
+        self.d_model = d_model
+        self.num_layers = num_layers
+        self.num_heads = num_heads
+        self.d_ff = d_ff
+        self.rope = rope
+
+        self.q_proj_weights = [weights[f"layers.{i}.attn.q_proj.weight"] for i in range(num_layers)]
+        self.k_proj_weights = [weights[f"layers.{i}.attn.k_proj.weight"] for i in range(num_layers)]
+        self.v_proj_weights = [weights[f"layers.{i}.attn.v_proj.weight"] for i in range(num_layers)]
+        self.o_proj_weights = [weights[f"layers.{i}.attn.output_proj.weight"] for i in range(num_layers)]
+        self.ffn_w1_weights = [weights[f"layers.{i}.ffn.w1.weight"] for i in range(num_layers)]
+        self.ffn_w2_weights = [weights[f"layers.{i}.ffn.w2.weight"] for i in range(num_layers)]
+        self.ffn_w3_weights = [weights[f"layers.{i}.ffn.w3.weight"] for i in range(num_layers)]
+        self.ln1_weight = [weights[f"layers.{i}.ln1.weight"] for i in range(num_layers)]
+        self.ln2_weight = [weights[f"layers.{i}.ln2.weight"] for i in range(num_layers)]
+
+        self.token_embedding_weight = nn.Parameter(torch.empty((vocab_size, d_model)))
+        self.ln_final_weight = nn.Parameter(torch.empty_like(weights["ln_final.weight"]))
+        self.lm_head_weight = nn.Parameter(torch.empty_like(weights["lm_head.weight"]))
+
+    def forward(self, input_indices):
+        x = torch.nn.functional.embedding(input_indices, self.token_embedding_weight)
+
+        for i in range(self.num_layers):
+            block_weights = {
+                "attn.q_proj.weight": self.q_proj_weights[i],
+                "attn.k_proj.weight": self.k_proj_weights[i],
+                "attn.v_proj.weight": self.v_proj_weights[i],
+                "attn.output_proj.weight": self.o_proj_weights[i],
+                "ffn.w1.weight": self.ffn_w1_weights[i],
+                "ffn.w2.weight": self.ffn_w2_weights[i],
+                "ffn.w3.weight": self.ffn_w3_weights[i],
+                "ln1.weight": self.ln1_weight[i],
+                "ln2.weight": self.ln2_weight[i]
+            }
+            block = TransformerBlock(self.d_model, self.num_heads, self.d_ff, self.context_length, block_weights, rope=self.rope)
+            block.load_state_dict({
+                "q_proj_weight": self.q_proj_weights[i],
+                "k_proj_weight": self.k_proj_weights[i],
+                "v_proj_weight": self.v_proj_weights[i],
+                "o_proj_weight": self.o_proj_weights[i],
+                "ffn_w1_weight": self.ffn_w1_weights[i],
+                "ffn_w2_weight": self.ffn_w2_weights[i],
+                "ffn_w3_weight": self.ffn_w3_weights[i],
+                "ln1_weight": self.ln1_weight[i],
+                "ln2_weight": self.ln2_weight[i]
+            })
+            x = block(x)
+
+        ln_final_wgt = [[self.ln_final_weight for _ in range(x.shape[1])] for _ in range(x.shape[0])]
+        norm_x = RMSNorm(ln_final_wgt)(x)
+        lm_head = Linear(self.d_model, self.vocab_size)
+        lm_head.load_state_dict({
+            "weight": self.lm_head_weight,
+            "bias": torch.zeros_like(self.lm_head_weight[:, 0])
+        })
+        logits = lm_head(norm_x)
+        return logits

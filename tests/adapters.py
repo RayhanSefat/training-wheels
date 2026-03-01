@@ -6,7 +6,7 @@ from therapml.nn_blocks import ReLU, GELU, softmax, Linear, SwiGLU
 from therapml.loss import CrossEntropyLoss
 from therapml.dropout import Dropout
 from therapml.norm import LayerNorm, RMSNorm
-from therapml.lm import RoPE, SelfAttention, MultiHeadSelfAttention, TransformerBlock
+from therapml.lm import RoPE, SelfAttention, MultiHeadSelfAttention, TransformerBlock, TransformerLM
 from torch import Tensor
 import torch
 
@@ -335,4 +335,14 @@ def run_transformer_lm(
         Float[Tensor, "batch_size sequence_length vocab_size"]: Tensor with the predicted unnormalized
         next-word distribution for each token.
     """
-    raise NotImplementedError
+    actual_seq_len = in_indices.shape[1]
+    rope = RoPE(d_model // num_heads, rope_theta, context_length, torch.arange(actual_seq_len, device=in_indices.device))
+    
+    transformer_lm = TransformerLM(vocab_size, context_length, d_model, num_layers, num_heads, d_ff, rope=rope, weights=weights)
+    transformer_lm.load_state_dict({
+        "token_embedding_weight": weights["token_embeddings.weight"],
+        "ln_final_weight": weights["ln_final.weight"],
+        "lm_head_weight": weights["lm_head.weight"]
+    })
+
+    return transformer_lm(in_indices)
