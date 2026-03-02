@@ -144,8 +144,7 @@ class TransformerLM(nn.Module):
         
         linear = Linear(in_features, out_features) 
         linear.load_state_dict({
-            "weight": x_proj_weight,
-            "bias": torch.zeros_like(x_proj_weight[:, 0])
+            "weight": x_proj_weight
         })
 
         return linear
@@ -190,8 +189,7 @@ class TransformerLM(nn.Module):
         norm_x = RMSNorm(ln_final_wgt)(x)
         lm_head = Linear(self.d_model, self.vocab_size)
         lm_head.load_state_dict({
-            "weight": self.lm_head_weight,
-            "bias": torch.zeros_like(self.lm_head_weight[:, 0])
+            "weight": self.lm_head_weight
         })
         logits = lm_head(norm_x)
         return logits

@@ -1,4 +1,3 @@
-# %% 
 import torch
 import torch.nn as nn
 import matplotlib.pyplot as plt
@@ -21,11 +20,11 @@ class VanillaNN(nn.Module):
         self.b2 = nn.Parameter(torch.randn(16))
         self.b3 = nn.Parameter(torch.randn(1))
         self.linear1 = Linear(1, 8)
-        self.linear1.load_state_dict({"weight": self.w1.T, "bias": self.b1})
+        self.linear1.load_state_dict({"weight": self.w1.T})
         self.linear2 = Linear(8, 16)
-        self.linear2.load_state_dict({"weight": self.w2.T, "bias": self.b2})
+        self.linear2.load_state_dict({"weight": self.w2.T})
         self.linear3 = Linear(16, 1)
-        self.linear3.load_state_dict({"weight": self.w3.T, "bias": self.b3})
+        self.linear3.load_state_dict({"weight": self.w3.T})
 
     def forward(self, x):
         x = ReLU(self.linear1(x))

@@ -50,7 +50,7 @@ def run_linear(
     in_features: Float[Tensor, "... d_in"],
 ) -> Float[Tensor, "... d_out"]:
     lineear_layer = Linear(d_in, d_out)
-    lineear_layer.load_state_dict({"weight": weights, "bias": torch.zeros(d_out)})
+    lineear_layer.load_state_dict({"weight": weights})
     return lineear_layer(in_features)
 
 
@@ -127,26 +127,22 @@ def run_multihead_self_attention(
 
     linear_q = Linear(d_k, d_in)
     linear_q.load_state_dict({
-        "weight": q_proj_weight,
-        "bias": torch.zeros(d_k)
+        "weight": q_proj_weight
     })
 
     linear_k = Linear(d_k, d_in)
     linear_k.load_state_dict({
-        "weight": k_proj_weight,
-        "bias": torch.zeros(d_k)
+        "weight": k_proj_weight
     })
 
     linear_v = Linear(d_v, d_in)
     linear_v.load_state_dict({
-        "weight": v_proj_weight,
-        "bias": torch.zeros(d_v)
+        "weight": v_proj_weight
     })
 
     linear_out = Linear(d_model, d_v)
     linear_out.load_state_dict({
-        "weight": o_proj_weight,
-        "bias": torch.zeros(d_model)
+        "weight": o_proj_weight
     })
 
     multihead_attn_layer = MultiHeadSelfAttention(d_model, num_heads, linear_q, linear_k, linear_v, linear_out, mask=causal_mask)
@@ -174,26 +170,22 @@ def run_multihead_self_attention_with_rope(
     
     linear_q = Linear(d_k, d_in)
     linear_q.load_state_dict({
-        "weight": q_proj_weight,
-        "bias": torch.zeros(d_k)
+        "weight": q_proj_weight
     })
 
     linear_k = Linear(d_k, d_in)
     linear_k.load_state_dict({
-        "weight": k_proj_weight,
-        "bias": torch.zeros(d_k)
+        "weight": k_proj_weight
     })
 
     linear_v = Linear(d_v, d_in)
     linear_v.load_state_dict({
-        "weight": v_proj_weight,
-        "bias": torch.zeros(d_v)
+        "weight": v_proj_weight
     })
 
     linear_out = Linear(d_model, d_v)
     linear_out.load_state_dict({
-        "weight": o_proj_weight,
-        "bias": torch.zeros(d_model)
+        "weight": o_proj_weight
     })
 
     multihead_attn_layer = MultiHeadSelfAttention(d_model, num_heads, linear_q, linear_k, linear_v, linear_out, mask=causal_mask, rope=rope)
@@ -276,26 +268,22 @@ def run_transformer_block(
 
     linear_q = Linear(d_model, d_model)
     linear_q.load_state_dict({
-        "weight": weights["attn.q_proj.weight"],
-        "bias": torch.zeros(d_model)
+        "weight": weights["attn.q_proj.weight"]
     })
 
     linear_k = Linear(d_model, d_model)
     linear_k.load_state_dict({
-        "weight": weights["attn.k_proj.weight"],
-        "bias": torch.zeros(d_model)
+        "weight": weights["attn.k_proj.weight"]
     })
 
     linear_v = Linear(d_model, d_model)
     linear_v.load_state_dict({
-        "weight": weights["attn.v_proj.weight"],
-        "bias": torch.zeros(d_model)
+        "weight": weights["attn.v_proj.weight"]
     })
 
     linear_out = Linear(d_model, d_model)
     linear_out.load_state_dict({
-        "weight": weights["attn.output_proj.weight"],
-        "bias": torch.zeros(d_model)
+        "weight": weights["attn.output_proj.weight"]
     })
 
     multihead_self_attn = MultiHeadSelfAttention(d_model, num_heads, linear_q, linear_k, linear_v, linear_out, mask=causal_mask, rope=rope)
