@@ -12,3 +12,6 @@ wheels/
 # cache files
 .pytest_cache/
 .uv_cache/
+
+#dataset
+therapml/train model/dataset
