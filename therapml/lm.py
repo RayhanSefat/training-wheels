@@ -57,53 +57,24 @@ class SelfAttention(nn.Module):
         return torch.matmul(attn_probs, self.v)
 
 class MultiHeadSelfAttention(nn.Module):
-    def __init__(self, d_model, num_heads, d_k, d_v, d_in, mask=None, rope=None):
+    def __init__(self, d_model, num_heads, linear_q, linear_k, linear_v, linear_out, mask=None, rope=None):
         super().__init__()
         self.num_heads = num_heads
         self.d_model = d_model
-        self.d_k = d_k
-        self.d_v = d_v
-        self.d_in = d_in
-        self.q_weight = nn.Parameter(torch.empty(d_k, d_in))
-        self.k_weight = nn.Parameter(torch.empty(d_k, d_in))
-        self.v_weight = nn.Parameter(torch.empty(d_v, d_in))
-        self.o_weight = nn.Parameter(torch.empty(d_model, d_v))
-        self.q_bias = nn.Parameter(torch.zeros(d_k))
-        self.k_bias = nn.Parameter(torch.zeros(d_k))
-        self.v_bias = nn.Parameter(torch.zeros(d_v))
-        self.o_bias = nn.Parameter(torch.zeros(d_model))
+        self.linear_q = linear_q
+        self.linear_k = linear_k
+        self.linear_v = linear_v
+        self.linear_out = linear_out
         self.mask = mask
         self.rope = rope
-
-    def __get_qkv(self, in_features):
-        linear_q = Linear(self.d_in, self.d_model)
-        linear_q.load_state_dict({
-            "weight": self.q_weight,
-            "bias": self.q_bias
-        })
-        q = linear_q(in_features)
-        
-        linear_k = Linear(self.d_in, self.d_model)
-        linear_k.load_state_dict({
-            "weight": self.k_weight,
-            "bias": self.k_bias
-        })
-        k = linear_k(in_features)
-        
-        linear_v = Linear(self.d_in, self.d_v)
-        linear_v.load_state_dict({
-            "weight": self.v_weight,
-            "bias": self.v_bias
-        })
-        v = linear_v(in_features)
-        
-        return q, k, v
 
     def forward(self, in_features):
         batch, seq_len, d_in = in_features.shape
         d_head = self.d_model // self.num_heads
 
-        q, k, v = self.__get_qkv(in_features)
+        q = self.linear_q(in_features)
+        k = self.linear_k(in_features)
+        v = self.linear_v(in_features)
 
         q = q.view(batch, seq_len, self.num_heads, d_head).transpose(1, 2).transpose(0, 1)
         k = k.view(batch, seq_len, self.num_heads, d_head).transpose(1, 2).transpose(0, 1)
@@ -112,81 +83,32 @@ class MultiHeadSelfAttention(nn.Module):
         contexts = [SelfAttention(k[i], v[i], mask=self.mask, rope=self.rope)(q[i]) for i in range(self.num_heads)]
         concatenated = torch.cat(contexts, dim=-1)
         
-        linear_out = Linear(self.d_model, self.d_model)
-        linear_out.load_state_dict({
-            "weight": self.o_weight,
-            "bias": self.o_bias
-        })
-        return linear_out(concatenated)
+        return self.linear_out(concatenated)
 
 class TransformerBlock(nn.Module):
-    def __init__(self, d_model, num_heads, d_ff, ctx_len, weights, rope=None):
+    def __init__(self, d_model, num_heads, d_ff, ctx_len, multihead_self_attn, swiglu_layer, weights, rope=None):
         super(TransformerBlock, self).__init__()
         self.d_model = d_model
         self.num_heads = num_heads
         self.d_ff = d_ff
         self.ctx_len = ctx_len
-        self.q_proj_weight = nn.Parameter(torch.empty_like(weights["attn.q_proj.weight"]))
-        self.k_proj_weight = nn.Parameter(torch.empty_like(weights["attn.k_proj.weight"]))
-        self.v_proj_weight = nn.Parameter(torch.empty_like(weights["attn.v_proj.weight"]))
-        self.o_proj_weight = nn.Parameter(torch.empty_like(weights["attn.output_proj.weight"]))
-        self.ffn_w1_weight = nn.Parameter(torch.empty_like(weights["ffn.w1.weight"]))
-        self.ffn_w2_weight = nn.Parameter(torch.empty_like(weights["ffn.w2.weight"]))
-        self.ffn_w3_weight = nn.Parameter(torch.empty_like(weights["ffn.w3.weight"]))
+        self.multihead_self_attn = multihead_self_attn
+        self.swiglu_layer = swiglu_layer
         self.ln1_weight = nn.Parameter(torch.empty_like(weights["ln1.weight"]))
         self.ln2_weight = nn.Parameter(torch.empty_like(weights["ln2.weight"]))
         self.rope = rope
-
-    def __get_attention(self, mask=None):
-        multihead_self_attn = MultiHeadSelfAttention(
-            d_model=self.d_model,
-            num_heads=self.num_heads,
-            d_k=self.q_proj_weight.shape[0],
-            d_v=self.v_proj_weight.shape[0],
-            d_in=self.q_proj_weight.shape[1],
-            mask=mask,
-            rope=self.rope
-        )
-
-        multihead_self_attn.load_state_dict({
-            "q_weight": self.q_proj_weight,
-            "k_weight": self.k_proj_weight,
-            "v_weight": self.v_proj_weight,
-            "o_weight": self.o_proj_weight,
-            "q_bias": torch.zeros_like(self.q_proj_weight[:, 0]),
-            "k_bias": torch.zeros_like(self.k_proj_weight[:, 0]),
-            "v_bias": torch.zeros_like(self.v_proj_weight[:, 0]),
-            "o_bias": torch.zeros_like(self.o_proj_weight[:, 0])
-        })
-        
-        return multihead_self_attn
-
-    def __get_attn_output(self, x):
-        seq_len = x.shape[1]
-        causal_mask = torch.tril(torch.ones(seq_len, seq_len)).bool()
-        attention = self.__get_attention(mask=causal_mask)
-        return attention(x)
-
-    def __get_ffn_output(self, x):
-        swiglu_layer = SwiGLU(self.d_model, self.d_ff)
-        swiglu_layer.load_state_dict({
-            "w1_weight": self.ffn_w1_weight,
-            "w2_weight": self.ffn_w2_weight,
-            "w3_weight": self.ffn_w3_weight
-        })
-        return swiglu_layer(x)
 
     def forward(self, x):
         ln1_wgt = [[self.ln1_weight for _ in range(x.shape[1])] for _ in range(x.shape[0])]
         ln2_wgt = [[self.ln2_weight for _ in range(x.shape[1])] for _ in range(x.shape[0])]
 
         norm_x = RMSNorm(ln1_wgt)(x)
-        attn_output = self.__get_attn_output(norm_x)
+        attn_output = self.multihead_self_attn(norm_x)
 
         h = x + attn_output
 
         norm_h = RMSNorm(ln2_wgt)(h)
-        ffn_output = self.__get_ffn_output(norm_h)
+        ffn_output = self.swiglu_layer(norm_h)
 
         out = h + ffn_output
 
@@ -217,33 +139,51 @@ class TransformerLM(nn.Module):
         self.ln_final_weight = nn.Parameter(torch.empty_like(weights["ln_final.weight"]))
         self.lm_head_weight = nn.Parameter(torch.empty_like(weights["lm_head.weight"]))
 
+    def __prepare_linear(self, x_proj_weight):
+        out_features, in_features = x_proj_weight.shape
+        
+        linear = Linear(in_features, out_features) 
+        linear.load_state_dict({
+            "weight": x_proj_weight,
+            "bias": torch.zeros_like(x_proj_weight[:, 0])
+        })
+
+        return linear
+
     def forward(self, input_indices):
         x = torch.nn.functional.embedding(input_indices, self.token_embedding_weight)
 
         for i in range(self.num_layers):
+            causal_mask = torch.tril(torch.ones(x.shape[1], x.shape[1])).bool()
+
+            multihead_self_attn = MultiHeadSelfAttention(
+                self.d_model,
+                self.num_heads,
+                self.__prepare_linear(self.q_proj_weights[i]),
+                self.__prepare_linear(self.k_proj_weights[i]),
+                self.__prepare_linear(self.v_proj_weights[i]),
+                self.__prepare_linear(self.o_proj_weights[i]),
+                mask=causal_mask,
+                rope=self.rope
+            )
+
+            swiglu_layer = SwiGLU(self.d_model, self.d_ff)
+            swiglu_layer.load_state_dict({
+                "w1_weight": self.ffn_w1_weights[i],
+                "w2_weight": self.ffn_w2_weights[i],
+                "w3_weight": self.ffn_w3_weights[i]
+            })
+
             block_weights = {
-                "attn.q_proj.weight": self.q_proj_weights[i],
-                "attn.k_proj.weight": self.k_proj_weights[i],
-                "attn.v_proj.weight": self.v_proj_weights[i],
-                "attn.output_proj.weight": self.o_proj_weights[i],
-                "ffn.w1.weight": self.ffn_w1_weights[i],
-                "ffn.w2.weight": self.ffn_w2_weights[i],
-                "ffn.w3.weight": self.ffn_w3_weights[i],
                 "ln1.weight": self.ln1_weight[i],
                 "ln2.weight": self.ln2_weight[i]
             }
-            block = TransformerBlock(self.d_model, self.num_heads, self.d_ff, self.context_length, block_weights, rope=self.rope)
+
+            block = TransformerBlock(self.d_model, self.num_heads, self.d_ff, self.context_length, multihead_self_attn, swiglu_layer, block_weights, rope=self.rope)
             block.load_state_dict({
-                "q_proj_weight": self.q_proj_weights[i],
-                "k_proj_weight": self.k_proj_weights[i],
-                "v_proj_weight": self.v_proj_weights[i],
-                "o_proj_weight": self.o_proj_weights[i],
-                "ffn_w1_weight": self.ffn_w1_weights[i],
-                "ffn_w2_weight": self.ffn_w2_weights[i],
-                "ffn_w3_weight": self.ffn_w3_weights[i],
                 "ln1_weight": self.ln1_weight[i],
                 "ln2_weight": self.ln2_weight[i]
-            })
+            }, strict=False)
             x = block(x)
 
         ln_final_wgt = [[self.ln_final_weight for _ in range(x.shape[1])] for _ in range(x.shape[0])]
