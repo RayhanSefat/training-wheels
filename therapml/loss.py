@@ -18,6 +18,6 @@ class CrossEntropyLoss(nn.Module):
             
             for j in range(logits.shape[1]):
                 if self.ground_truth[i][j] == 1:
-                    loss -= torch.log(torch.tensor(softmax_probs[j]) + self.eps)
+                    loss -= torch.log(softmax_probs[j] + self.eps)
         
         return loss / logits.shape[0]
