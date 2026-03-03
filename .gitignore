@@ -13,5 +13,8 @@ wheels/
 .pytest_cache/
 .uv_cache/
 
-#dataset
+# dataset
 therapml/train_model/dataset
+
+# tokenizers
+therapml/train_model/tokenizers
