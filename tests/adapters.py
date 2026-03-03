@@ -395,11 +395,10 @@ def run_transformer_lm(
     actual_seq_len = in_indices.shape[1]
     rope = RoPE(d_model // num_heads, rope_theta, context_length, torch.arange(actual_seq_len, device=in_indices.device))
     
-    transformer_lm = TransformerLM(vocab_size, context_length, d_model, num_layers, num_heads, d_ff, rope=rope, weights=weights)
+    transformer_lm = TransformerLM(vocab_size, context_length, d_model, num_layers, num_heads, d_ff, in_indices.shape[1], rope=rope, weights=weights)
     transformer_lm.load_state_dict({
-        "token_embedding_weight": weights["token_embeddings.weight"],
         "ln_final_weight": weights["ln_final.weight"],
         "lm_head_weight": weights["lm_head.weight"]
-    })
+    }, strict=False)
 
     return transformer_lm(in_indices)

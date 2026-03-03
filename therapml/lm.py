@@ -115,7 +115,7 @@ class TransformerBlock(nn.Module):
         return out
 
 class TransformerLM(nn.Module):
-    def __init__(self, vocab_size, context_length, d_model, num_layers, num_heads, d_ff, rope=None, weights=None):
+    def __init__(self, vocab_size, context_length, d_model, num_layers, num_heads, d_ff, num_tokens, rope=None, weights=None):
         super(TransformerLM, self).__init__()
         self.vocab_size = vocab_size
         self.context_length = context_length
@@ -125,19 +125,56 @@ class TransformerLM(nn.Module):
         self.d_ff = d_ff
         self.rope = rope
 
-        self.q_proj_weights = [weights[f"layers.{i}.attn.q_proj.weight"] for i in range(num_layers)]
-        self.k_proj_weights = [weights[f"layers.{i}.attn.k_proj.weight"] for i in range(num_layers)]
-        self.v_proj_weights = [weights[f"layers.{i}.attn.v_proj.weight"] for i in range(num_layers)]
-        self.o_proj_weights = [weights[f"layers.{i}.attn.output_proj.weight"] for i in range(num_layers)]
-        self.ffn_w1_weights = [weights[f"layers.{i}.ffn.w1.weight"] for i in range(num_layers)]
-        self.ffn_w2_weights = [weights[f"layers.{i}.ffn.w2.weight"] for i in range(num_layers)]
-        self.ffn_w3_weights = [weights[f"layers.{i}.ffn.w3.weight"] for i in range(num_layers)]
-        self.ln1_weight = [weights[f"layers.{i}.ln1.weight"] for i in range(num_layers)]
-        self.ln2_weight = [weights[f"layers.{i}.ln2.weight"] for i in range(num_layers)]
+        self.token_embedding_weight = nn.Embedding(vocab_size, d_model)
+        self.token_embedding_weight.weight = nn.Parameter(weights["token_embeddings.weight"].clone())
 
-        self.token_embedding_weight = nn.Parameter(torch.empty((vocab_size, d_model)))
-        self.ln_final_weight = nn.Parameter(torch.empty_like(weights["ln_final.weight"]))
-        self.lm_head_weight = nn.Parameter(torch.empty_like(weights["lm_head.weight"]))
+        self.ln_final_weight = nn.Parameter(weights["ln_final.weight"].clone())
+        self.lm_head_weight = nn.Parameter(weights["lm_head.weight"].clone())
+
+        self.blocks = nn.ModuleList()
+        
+        causal_mask = torch.tril(torch.ones(num_tokens, num_tokens)).bool()
+        
+        for i in range(num_layers):
+            q_w = weights[f"layers.{i}.attn.q_proj.weight"]
+            k_w = weights[f"layers.{i}.attn.k_proj.weight"]
+            v_w = weights[f"layers.{i}.attn.v_proj.weight"]
+            o_w = weights[f"layers.{i}.attn.output_proj.weight"]
+
+            multihead_self_attn = MultiHeadSelfAttention(
+                d_model, num_heads,
+                self.__prepare_linear(q_w),
+                self.__prepare_linear(k_w),
+                self.__prepare_linear(v_w),
+                self.__prepare_linear(o_w),
+                mask=causal_mask,
+                rope=rope
+            )
+
+            swiglu_layer = SwiGLU(d_model, d_ff)
+            swiglu_layer.load_state_dict({
+                "w1_weight": weights[f"layers.{i}.ffn.w1.weight"],
+                "w2_weight": weights[f"layers.{i}.ffn.w2.weight"],
+                "w3_weight": weights[f"layers.{i}.ffn.w3.weight"]
+            })
+
+            ln1_weight = weights[f"layers.{i}.ln1.weight"]
+            ln2_weight = weights[f"layers.{i}.ln2.weight"]
+
+            block_weights = {
+                "ln1.weight": ln1_weight,
+                "ln2.weight": ln2_weight
+            }
+
+            block = TransformerBlock(
+                d_model, num_heads, d_ff, context_length, 
+                multihead_self_attn, swiglu_layer, block_weights, rope=rope
+            )
+            block.load_state_dict({
+                "ln1_weight": ln1_weight,
+                "ln2_weight": ln2_weight
+            }, strict=False)
+            self.blocks.append(block)
 
     def __prepare_linear(self, x_proj_weight):
         out_features, in_features = x_proj_weight.shape
@@ -150,39 +187,8 @@ class TransformerLM(nn.Module):
         return linear
 
     def forward(self, input_indices):
-        x = torch.nn.functional.embedding(input_indices, self.token_embedding_weight)
-
-        for i in range(self.num_layers):
-            causal_mask = torch.tril(torch.ones(x.shape[1], x.shape[1])).bool()
-
-            multihead_self_attn = MultiHeadSelfAttention(
-                self.d_model,
-                self.num_heads,
-                self.__prepare_linear(self.q_proj_weights[i]),
-                self.__prepare_linear(self.k_proj_weights[i]),
-                self.__prepare_linear(self.v_proj_weights[i]),
-                self.__prepare_linear(self.o_proj_weights[i]),
-                mask=causal_mask,
-                rope=self.rope
-            )
-
-            swiglu_layer = SwiGLU(self.d_model, self.d_ff)
-            swiglu_layer.load_state_dict({
-                "w1_weight": self.ffn_w1_weights[i],
-                "w2_weight": self.ffn_w2_weights[i],
-                "w3_weight": self.ffn_w3_weights[i]
-            })
-
-            block_weights = {
-                "ln1.weight": self.ln1_weight[i],
-                "ln2.weight": self.ln2_weight[i]
-            }
-
-            block = TransformerBlock(self.d_model, self.num_heads, self.d_ff, self.context_length, multihead_self_attn, swiglu_layer, block_weights, rope=self.rope)
-            block.load_state_dict({
-                "ln1_weight": self.ln1_weight[i],
-                "ln2_weight": self.ln2_weight[i]
-            }, strict=False)
+        x = torch.nn.functional.embedding(input_indices, self.token_embedding_weight.weight)
+        for block in self.blocks:
             x = block(x)
 
         ln_final_wgt = [[self.ln_final_weight for _ in range(x.shape[1])] for _ in range(x.shape[0])]
