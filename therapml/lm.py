@@ -12,11 +12,15 @@ class RoPE(nn.Module):
         self.token_positions = token_positions
 
     def forward(self, x):
-        dim_indices = torch.arange(0, self.embedding_dim, 2).float()
+        device = x.device 
+        
+        dim_indices = torch.arange(0, self.embedding_dim, 2, device=device).float()
         omega = 1.0 / (self.theta ** (dim_indices / self.embedding_dim))
         
-        m = self.token_positions.reshape(-1, 1).float()
-        angles = m * omega # Broadcasting: [seq_len, 1] * [d_head/2] -> [seq_len, d_head/2]
+        seq_len = x.shape[1]
+        m = torch.arange(seq_len, device=device).reshape(-1, 1).float()
+        
+        angles = m * omega 
         
         cos = angles.cos()
         sin = angles.sin()
@@ -29,7 +33,7 @@ class RoPE(nn.Module):
         out1 = x1 * cos - x2 * sin
         out2 = x1 * sin + x2 * cos
         
-        return torch.stack([out1, out2], dim=-1).reshape(batch_size, seq_len, self.embedding_dim).to(torch.float32)
+        return torch.stack([out1, out2], dim=-1).reshape(batch_size, seq_len, self.embedding_dim).to(x.dtype)
 
 class SelfAttention(nn.Module):
     def __init__(self, k, v, mask=None, rope=None):
