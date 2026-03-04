@@ -7,7 +7,7 @@ class CrossEntropyLoss(nn.Module):
         super(CrossEntropyLoss, self).__init__()
         self.eps = eps
 
-    def forward(self, ground_truth, logits):
+    def forward(self, logits, ground_truth):
         loss = 0.0
 
         for i in range(logits.shape[0]):

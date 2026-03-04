@@ -75,7 +75,7 @@ def run_cross_entropy_loss(
         logits: Float[Tensor, "batch output_dim"],
         ground_truth: Float[Tensor, "batch output_dim"]) -> Float[Tensor, ""]:
     cross_entropy_loss_fn = CrossEntropyLoss()
-    return cross_entropy_loss_fn(ground_truth, logits)
+    return cross_entropy_loss_fn(logits, ground_truth)
 
 def run_dropout(input: Float[Tensor, "..."], prob: float) -> Float[Tensor, "..."]:
     dropout_layer = Dropout(prob)
