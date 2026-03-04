@@ -16,8 +16,7 @@ class LayerNorm(nn.Module):
             for j in range(shape[1]):
                 mean = torch.mean(input[i][j])
                 variance = torch.var(input[i][j], unbiased=False)
-                for k in range(shape[2]):
-                    result[i][j][k] = ((input[i][j][k] - mean) / torch.sqrt(variance + self.eps)) * self.gamma[i][j][k] + self.beta[i][j][k]
+                result[i][j] = ((input[i][j] - mean) / torch.sqrt(variance + self.eps)) * self.gamma[i][j] + self.beta[i][j]
 
         return result
 
@@ -33,8 +32,7 @@ class RMSNorm(nn.Module):
         
         for i in range(shape[0]):
             for j in range(shape[1]):
-                rms = torch.sqrt(torch.mean(input[i][j] ** 2))
-                for k in range(shape[2]):
-                    result[i][j][k] = (input[i][j][k] / (rms + self.eps)) * self.gamma[i][j][k]
+                rms = torch.sqrt(torch.mean(input[i][j] ** 2) + self.eps)
+                result[i][j] = (input[i][j] / rms) * self.gamma[i][j]
 
         return result
