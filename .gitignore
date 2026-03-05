@@ -18,3 +18,6 @@ therapml/train_model/dataset
 
 # tokenizers
 therapml/train_model/tokenizers
+
+# models
+therapml/train_model/models
