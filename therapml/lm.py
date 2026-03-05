@@ -4,6 +4,8 @@ from .optimizers import AdamW
 import torch
 import torch.nn as nn
 
+device = 'cuda' if torch.cuda.is_available() else 'cpu'
+
 class RoPE(nn.Module):
     def __init__(self, embedding_dim, theta, context_len, token_positions):
         super(RoPE, self).__init__()
@@ -11,9 +13,7 @@ class RoPE(nn.Module):
         self.theta = theta
         self.token_positions = token_positions
 
-    def forward(self, x):
-        device = x.device 
-        
+    def forward(self, x):        
         dim_indices = torch.arange(0, self.embedding_dim, 2, device=device).float()
         omega = 1.0 / (self.theta ** (dim_indices / self.embedding_dim))
         
@@ -106,6 +106,7 @@ class TransformerBlock(nn.Module):
         ln1_wgt = [[self.ln1_weight for _ in range(x.shape[1])] for _ in range(x.shape[0])]
         ln2_wgt = [[self.ln2_weight for _ in range(x.shape[1])] for _ in range(x.shape[0])]
 
+      
         norm_x = RMSNorm(ln1_wgt)(x)
         attn_output = self.multihead_self_attn(norm_x)
 
@@ -136,8 +137,8 @@ class TransformerLM(nn.Module):
         self.lm_head_weight = nn.Parameter(weights["lm_head.weight"].clone())
 
         self.blocks = nn.ModuleList()
-        
-        causal_mask = torch.tril(torch.ones(num_tokens, num_tokens)).bool()
+
+        causal_mask = torch.tril(torch.ones(num_tokens, num_tokens, device=device)).bool()
         
         for i in range(num_layers):
             q_w = weights[f"layers.{i}.attn.q_proj.weight"]
@@ -194,7 +195,7 @@ class TransformerLM(nn.Module):
         x = torch.nn.functional.embedding(input_indices, self.token_embedding_weight.weight)
         for block in self.blocks:
             x = block(x)
-
+  
         ln_final_wgt = [[self.ln_final_weight for _ in range(x.shape[1])] for _ in range(x.shape[0])]
         norm_x = RMSNorm(ln_final_wgt)(x)
         lm_head = Linear(self.d_model, self.vocab_size)

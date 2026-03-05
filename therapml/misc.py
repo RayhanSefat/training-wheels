@@ -11,10 +11,8 @@ def clip_grad_value(value, minimum_threshold=-1e5, maximum_threshold=1e5):
     
     return value
 
+@torch.no_grad
 def clip_grad_norm(parameters, max_norm, norm_type=2.0):
-    if isinstance(parameters, torch.tensor):
-        parameters = [parameters]
-
     grads = [p.grad for p in parameters if p.grad is not None]
     max_norm = float(max_norm)
     norm_type = float(norm_type)
@@ -32,7 +30,7 @@ def clip_grad_norm(parameters, max_norm, norm_type=2.0):
 
     if clip_coeff < 1:
         for g in grads:
-            g.detach().mul_(clip_coeff)
+            g.mul_(clip_coeff)
             
     return total_norm
 

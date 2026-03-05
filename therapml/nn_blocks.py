@@ -2,6 +2,8 @@ import torch
 import torch.nn as nn
 from scipy.special import erf
 
+device = 'cuda' if torch.cuda.is_available() else 'cpu'
+
 def ReLU(in_features):
     data = torch.as_tensor(in_features)
 
@@ -24,7 +26,7 @@ class Linear(nn.Module):
         self.d_in = d_in
         self.d_out = d_out
 
-        self.weight = nn.Parameter(torch.empty(d_out, d_in))
+        self.weight = nn.Parameter(torch.empty(d_out, d_in, device=device))
 
     def forward(self, in_features):
         weights_transposed = self.weight.T
