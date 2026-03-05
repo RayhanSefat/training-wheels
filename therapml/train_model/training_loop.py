@@ -6,7 +6,6 @@ from therapml.lm import RoPE, TransformerLM
 from therapml.optimizers import AdamW
 from therapml.loss import CrossEntropyLoss
 from therapml.misc import clip_grad_norm
-import timeit
 
 import os
 os.chdir(os.getcwd())
