@@ -10,13 +10,8 @@ class CrossEntropyLoss(nn.Module):
     def forward(self, logits, ground_truth):
         loss = 0.0
 
-        for i in range(logits.shape[0]):
-            shifted_logits = logits[i] - logits[i].max()
-            
-            softmax_probs = softmax(shifted_logits, dim=0)
-            
-            for j in range(logits.shape[1]):
-                if ground_truth[i][j] == 1:
-                    loss -= torch.log(softmax_probs[j] + self.eps)
+        shifted_logits = logits - logits.max(dim=1, keepdim=True)[0]
+        softmax_probs = softmax(shifted_logits, dim=1)
+        loss = -torch.sum(ground_truth * torch.log(softmax_probs + self.eps))
         
         return loss / logits.shape[0]
