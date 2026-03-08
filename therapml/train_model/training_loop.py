@@ -12,10 +12,11 @@ os.chdir(os.getcwd())
 
 from pathlib import Path
 import re
+import glob
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 eval_interval = 20
-max_iters = 2000
+max_iters = 3000
 
 BASE_DIR = Path(__file__).resolve().parent
 
@@ -94,42 +95,65 @@ def estimate_validation_loss():
 
 min_loss = 100.0
 
-for iter in range(1, max_iters + 1):
-    xb, yb = get_batch(train_tokens, batch_size, block_size)
+checkpoint_dir = 'therapml/train_model/models/'
+os.makedirs(checkpoint_dir, exist_ok=True)
+
+def get_latest_checkpoint(path):
+    files = glob.glob(os.path.join(path, 'checkpoint_iter_*.pt'))
+    if not files:
+        return None
+
+    latest_file = max(files, key=lambda x: int(re.findall(r'\d+', x)[-1]))
+    return latest_file
+
+start_iter = 1
+latest_checkpoint = get_latest_checkpoint(checkpoint_dir)
+
+if latest_checkpoint:
+    print(f"Loading checkpoint: {latest_checkpoint}")
+    checkpoint = torch.load(latest_checkpoint, map_location=device)
     
-    logits = model(xb)
-    
-    B, T, C = logits.shape
-    logits = logits.view(B*T, C)
-    targets = yb.view(B*T)
-    # targets_reshaped = torch.tensor([[targets[i] for _ in range(C)] for i in range(B*T)])
+    model.load_state_dict(checkpoint['model_state_dict'])
+    optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+    start_iter = checkpoint['iter'] + 1
+    min_loss = checkpoint.get('loss', 100.0) # Optional: sync min_loss
+    print(f"Resuming from iteration {start_iter}")
+else:
+    print("No checkpoint found. Starting from scratch.")
 
-    loss = criterion(logits, targets)
-    optimizer.zero_grad(set_to_none=True)
-    loss.backward()
-    clip_grad_norm(model.parameters(), max_norm=1.0)
-    optimizer.step()
-
-    validation_loss = estimate_validation_loss()
-
-    if validation_loss < min_loss:
-        torch.save({
-            'iter': iter,
-            'model_state_dict': model.state_dict(),
-            'optimizer_state_dict': optimizer.state_dict(),
-            'loss': loss.item(),
-        }, 'therapml/train_model/models/checkpoint_best.pt')
+if __name__ == "__main__":
+    for iter in range(start_iter, max_iters + 1):
+        xb, yb = get_batch(train_tokens, batch_size, block_size)
         
-        min_loss = validation_loss
+        logits = model(xb)
+        B, T, C = logits.shape
+        loss = criterion(logits.view(B*T, C), yb.view(B*T))
+        
+        optimizer.zero_grad(set_to_none=True)
+        loss.backward()
+        clip_grad_norm(model.parameters(), max_norm=1.0)
+        optimizer.step()
 
-        print("Best model updated")
+        validation_loss = estimate_validation_loss()
 
-    if iter % eval_interval == 0:
-        torch.save({
-            'iter': iter,
-            'model_state_dict': model.state_dict(),
-            'optimizer_state_dict': optimizer.state_dict(),
-            'loss': loss.item(),
-        }, f'therapml/train_model/models/checkpoint_iter_{iter}.pt')
+        # Save Best Model
+        if validation_loss < min_loss:
+            torch.save({
+                'iter': iter,
+                'model_state_dict': model.state_dict(),
+                'optimizer_state_dict': optimizer.state_dict(),
+                'loss': validation_loss.item(),
+            }, os.path.join(checkpoint_dir, 'checkpoint_best.pt'))
+            min_loss = validation_loss
+            print("Best model updated")
 
-    print(f"Step {iter}: Training loss {loss.item():.4f} and Validation loss {validation_loss:.4f}")
+        # Save Periodic Checkpoint
+        if iter % eval_interval == 0:
+            torch.save({
+                'iter': iter,
+                'model_state_dict': model.state_dict(),
+                'optimizer_state_dict': optimizer.state_dict(),
+                'loss': loss.item(),
+            }, os.path.join(checkpoint_dir, f'checkpoint_iter_{iter}.pt'))
+
+        print(f"Step {iter}: Training loss {loss.item():.4f} and Validation loss {validation_loss:.4f}")
