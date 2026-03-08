@@ -23,16 +23,9 @@ class LayerNorm(nn.Module):
 class RMSNorm(nn.Module):
     def __init__(self, gamma, eps=5e-6):
         super(RMSNorm, self).__init__()
-        self.gamma = gamma
+        self.gamma = nn.Parameter(torch.zeros_like(gamma))
         self.eps = eps
 
-    def forward(self, input):
-        shape = input.shape
-        result = torch.empty_like(input)
-        
-        for i in range(shape[0]):
-            for j in range(shape[1]):
-                rms = torch.sqrt(torch.mean(input[i][j] ** 2) + self.eps)
-                result[i][j] = (input[i][j] / rms) * self.gamma[i][j]
-
-        return result
+    def forward(self, x):
+        rms = torch.sqrt(torch.mean(x**2, dim=-1, keepdim=True) + self.eps)
+        return (x / rms) * self.gamma

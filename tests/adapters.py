@@ -87,6 +87,9 @@ def run_layernorm(input: Float[Tensor, "batch ..."], gamma: Float[Tensor, "batch
 
 def run_rmsnorm(input: Float[Tensor, "batch ..."], gamma: Float[Tensor, "batch ..."]) -> Float[Tensor, "batch ..."]:
     rmsnorm_layer = RMSNorm(gamma)
+    rmsnorm_layer.load_state_dict({
+        "gamma": gamma
+    })
     return rmsnorm_layer(input)
 
 def run_rope(
