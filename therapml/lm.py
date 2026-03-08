@@ -3,6 +3,7 @@ from .norm import LayerNorm, RMSNorm
 from .optimizers import AdamW
 import torch
 import torch.nn as nn
+import math
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
@@ -101,18 +102,20 @@ class TransformerBlock(nn.Module):
         self.ln1_weight = nn.Parameter(torch.empty_like(weights["ln1.weight"]))
         self.ln2_weight = nn.Parameter(torch.empty_like(weights["ln2.weight"]))
         self.rope = rope
+        
+        self.norm_obj_x = RMSNorm(self.ln1_weight)
+        self.norm_obj_h = RMSNorm(self.ln2_weight)
+
+        self.norm_obj_x.gamma.data.copy_(weights["ln1.weight"])
+        self.norm_obj_h.gamma.data.copy_(weights["ln2.weight"])
 
     def forward(self, x):
-        ln1_wgt = [[self.ln1_weight for _ in range(x.shape[1])] for _ in range(x.shape[0])]
-        ln2_wgt = [[self.ln2_weight for _ in range(x.shape[1])] for _ in range(x.shape[0])]
-
-      
-        norm_x = RMSNorm(ln1_wgt)(x)
+        norm_x = self.norm_obj_x(x)
         attn_output = self.multihead_self_attn(norm_x)
 
         h = x + attn_output
 
-        norm_h = RMSNorm(ln2_wgt)(h)
+        norm_h = self.norm_obj_h(h)
         ffn_output = self.swiglu_layer(norm_h)
 
         out = h + ffn_output
@@ -180,6 +183,11 @@ class TransformerLM(nn.Module):
                 "ln2_weight": ln2_weight
             }, strict=False)
             self.blocks.append(block)
+        
+        self.norm_obj_x = RMSNorm(self.ln_final_weight)
+        self.norm_obj_x.load_state_dict({
+            "gamma": self.ln_final_weight
+        })
 
     def __prepare_linear(self, x_proj_weight):
         out_features, in_features = x_proj_weight.shape
@@ -196,8 +204,8 @@ class TransformerLM(nn.Module):
         for block in self.blocks:
             x = block(x)
   
-        ln_final_wgt = [[self.ln_final_weight for _ in range(x.shape[1])] for _ in range(x.shape[0])]
-        norm_x = RMSNorm(ln_final_wgt)(x)
+        norm_x = self.norm_obj_x(x)
+
         lm_head = Linear(self.d_model, self.vocab_size)
         lm_head.load_state_dict({
             "weight": self.lm_head_weight

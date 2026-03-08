@@ -16,7 +16,7 @@ import glob
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 eval_interval = 20
-max_iters = 3000
+max_iters = 10000
 
 BASE_DIR = Path(__file__).resolve().parent
 
@@ -43,7 +43,7 @@ train_tokens = torch.tensor(train_ids, dtype=torch.long)
 val_tokens = torch.tensor(val_ids, dtype=torch.long)
 
 block_size = 256
-batch_size = 32
+batch_size = 128
 d_model = 128
 num_layers = 4
 num_heads = 4

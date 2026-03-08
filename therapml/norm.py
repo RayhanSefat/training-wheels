@@ -21,7 +21,7 @@ class LayerNorm(nn.Module):
         return result
 
 class RMSNorm(nn.Module):
-    def __init__(self, gamma, eps=5e-6):
+    def __init__(self, gamma, eps=1e-5):
         super(RMSNorm, self).__init__()
         self.gamma = nn.Parameter(torch.zeros_like(gamma))
         self.eps = eps

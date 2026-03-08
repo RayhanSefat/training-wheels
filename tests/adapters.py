@@ -50,7 +50,7 @@ def run_linear(
     in_features: Float[Tensor, "... d_in"],
 ) -> Float[Tensor, "... d_out"]:
     lineear_layer = Linear(d_in, d_out)
-    lineear_layer.load_state_dict({"weight": weights})
+    lineear_layer.load_state_dict({"weight": weights.to('cpu')})
     return lineear_layer(in_features)
 
 
@@ -301,9 +301,6 @@ def run_transformer_block(
     transformer_block = TransformerBlock(d_model, num_heads, d_ff, ctx_len, multihead_self_attn, swiglu_layer, weights, rope=rope)
     transformer_block.load_state_dict({
         "ln1_weight": weights["ln1.weight"],
-        "ffn_w1_weight": weights["ffn.w1.weight"],
-        "ffn_w2_weight": weights["ffn.w2.weight"],
-        "ffn_w3_weight": weights["ffn.w3.weight"],
         "ln2_weight": weights["ln2.weight"]
     }, strict=False)
 
