@@ -83,6 +83,10 @@ def run_dropout(input: Float[Tensor, "..."], prob: float) -> Float[Tensor, "..."
 
 def run_layernorm(input: Float[Tensor, "batch ..."], gamma: Float[Tensor, "batch ..."], beta: Float[Tensor, "batch ..."]) -> Float[Tensor, "batch ..."]:
     layernorm_layer = LayerNorm(gamma, beta)
+    layernorm_layer.load_state_dict({
+        "gamma": gamma,
+        "beta": beta
+    })
     return layernorm_layer(input)
 
 def run_rmsnorm(input: Float[Tensor, "batch ..."], gamma: Float[Tensor, "batch ..."]) -> Float[Tensor, "batch ..."]:
