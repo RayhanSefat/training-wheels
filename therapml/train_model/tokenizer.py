@@ -3,6 +3,7 @@ This file is to be run to create the my_tokenizer.json file
 """
 
 from tokenizers import Tokenizer, models, normalizers, pre_tokenizers, trainers
+from datasets import load_dataset
 
 tokenizer = Tokenizer(models.WordPiece(unk_token="[UNK]"))
 
@@ -15,10 +16,7 @@ trainer = trainers.WordPieceTrainer(
     special_tokens=["[UNK]", "[CLS]", "[SEP]", "[PAD]", "[MASK]"]
 )
 
-files = [
-    "therapml/train_model/dataset/train.csv",
-    "therapml/train_model/dataset/validation.csv"
-]
-tokenizer.train(files, trainer)
+train_dataset = load_dataset("roneneldan/TinyStories")["train"]
+tokenizer.train_from_iterator(train_dataset["text"], trainer)
 
 tokenizer.save("therapml/train_model/tokenizers/my_tokenizer.json")

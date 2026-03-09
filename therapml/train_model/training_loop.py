@@ -13,34 +13,33 @@ os.chdir(os.getcwd())
 from pathlib import Path
 import re
 import glob
+from datasets import load_dataset
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 eval_interval = 20
-max_iters = 10000
+max_iters = 30000
 
 BASE_DIR = Path(__file__).resolve().parent
 
-train_path = BASE_DIR / 'dataset' / 'train.csv'
-validation_path = BASE_DIR / 'dataset' / 'validation.csv'
-test_path = BASE_DIR / 'dataset' / 'test.csv'
+dataset = load_dataset("roneneldan/TinyStories")
 
-with open(train_path, "r") as f:
-    train_data = f.read()
-with open(validation_path, "r") as f:
-    validation_data = f.read()
-with open(test_path, "r") as f:
-    test_data = f.read()
+train_dataset = dataset["train"]
+valid_dataset = dataset["validation"]
 
 tokenizer = Tokenizer.from_file("therapml/train_model/tokenizers/my_tokenizer.json")
 
-dataset = [train_data, validation_data]
-encoded_outputs = tokenizer.encode_batch(dataset)
+train_ids = tokenizer.encode(train_dataset["text"][0]).ids
+val_ids = tokenizer.encode(valid_dataset["text"][0]).ids
 
-train_ids = tokenizer.encode(train_data).ids
-val_ids = tokenizer.encode(validation_data).ids
+def get_tokens(dataset, num_samples=1000):
+    all_ids = []
+    for i in range(min(num_samples, len(dataset))):
+        text = dataset[i]["text"]
+        all_ids.extend(tokenizer.encode(text).ids)
+    return torch.tensor(all_ids, dtype=torch.long)
 
-train_tokens = torch.tensor(train_ids, dtype=torch.long)
-val_tokens = torch.tensor(val_ids, dtype=torch.long)
+train_tokens = get_tokens(train_dataset, num_samples=5000)
+val_tokens = get_tokens(valid_dataset, num_samples=500)
 
 block_size = 256
 batch_size = 128
@@ -76,7 +75,9 @@ optimizer = AdamW(model.parameters(), lr=learning_rate)
 criterion = nn.CrossEntropyLoss()
 
 def get_batch(data, batch_size, block_size):
-    ix = torch.randint(len(data) - block_size, (batch_size,))
+    if len(data) < block_size + 1:
+        raise ValueError(f"Data length ({len(data)}) must be at least block_size + 1 ({block_size + 1})")
+    ix = torch.randint(0, len(data) - block_size, (batch_size,))
     x = torch.stack([data[i:i+block_size] for i in ix])
     y = torch.stack([data[i+1:i+block_size+1] for i in ix])
     return x.to(device), y.to(device)

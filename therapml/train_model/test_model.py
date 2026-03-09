@@ -4,12 +4,15 @@ from therapml.lm import RoPE, TransformerLM
 from therapml.nn_blocks import softmax
 from .generator import generate_dummy_weights
 from pathlib import Path
+import re
+from datasets import load_dataset
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 BASE_DIR = Path(__file__).resolve().parent
 CHECKPOINT_PATH = 'therapml/train_model/models/checkpoint_best.pt'
 TOKENIZER_PATH = "therapml/train_model/tokenizers/my_tokenizer.json"
-TEST_DATA_PATH = BASE_DIR / 'dataset' / 'test.csv'
+
+dataset = load_dataset("roneneldan/TinyStories")
 
 block_size = 256
 d_model = 128
@@ -51,8 +54,7 @@ else:
     exit()
 
 def evaluate_test_loss():
-    with open(TEST_DATA_PATH, "r") as f:
-        test_data = f.read()
+    test_data = dataset["test"]["text"][0]
     
     test_ids = tokenizer.encode(test_data).ids
     test_tokens = torch.tensor(test_ids, dtype=torch.long).to(device)
@@ -98,18 +100,26 @@ def generate(prompt, max_new_tokens=100, temperature=0.7, top_k=20):
             
             idx = torch.cat((idx, idx_next), dim=1)
             
-    return tokenizer.decode(idx[0].tolist())
+    decoded_text = tokenizer.decode(idx[0].tolist())
+
+    return re.sub(r'\s+([.,!?;:\"\'])', r'\1', decoded_text)
+
+
 
 if __name__ == "__main__":
-    test_loss = evaluate_test_loss()
-    print(f"\n[Test Results]\nAverage Cross Entropy Loss: {test_loss:.4f}")
+    # test_loss = evaluate_test_loss()
+    # print(f"\n[Test Results]\nAverage Cross Entropy Loss: {test_loss:.4f}")
     
     print("\n--- Model Inference ---")
     prompts = [
-        "ANTONIO:\nWhat a blow was there given!"
+        """Ben and Mia like to play in the big room with many books and papers. They see a big box with a lock on it. They want to know what is inside. They look for a key, but they cannot find one. They see a metal thing that looks like a stick. It is a file. They think it can open the lock.
+
+They take the file and try to put it in the lock. They push and pull, but nothing happens. They hear a loud noise. It is a beep. They look at the box. It has a red light and a number. The number is going down. 10, 9, 8...
+
+They do not know what it means. They are scared. They tremble. They want to run away, but they do not know how. The door is locked too. They scream for help, but no one hears them. The number is going down. 3, 2, 1..."""
     ]
     
     for p in prompts:
         print(f"\nPrompt: {p}")
-        output = generate(p, max_new_tokens=40)
+        output = generate(p, max_new_tokens=100)
         print(f"Generated: {output}")
