@@ -9,21 +9,21 @@ from datasets import load_dataset
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 BASE_DIR = Path(__file__).resolve().parent
-CHECKPOINT_PATH = 'therapml/train_model/models/checkpoint_best.pt'
+CHECKPOINT_PATH = 'therapml/train_model/models_4/checkpoint_best.pt'
 TOKENIZER_PATH = "therapml/train_model/tokenizers/my_tokenizer.json"
 
 dataset = load_dataset("roneneldan/TinyStories")
 
-block_size = 256
+block_size = 128
 d_model = 128
-num_layers = 4
+num_layers = 8
 num_heads = 4
 d_ff = 512
 
 tokenizer = Tokenizer.from_file(TOKENIZER_PATH)
 vocab_size = tokenizer.get_vocab_size()
 
-dummy_weights = generate_dummy_weights(vocab_size, d_model=128, d_ff=512, num_layers=4)
+dummy_weights = generate_dummy_weights(vocab_size, d_model=d_model, d_ff=d_ff, num_layers=num_layers)
 
 rope_module = RoPE(
     embedding_dim=d_model // num_heads,
@@ -102,7 +102,7 @@ def generate(prompt, max_new_tokens=100, temperature=0.7, top_k=20):
             
     decoded_text = tokenizer.decode(idx[0].tolist())
 
-    return re.sub(r'\s+([.,!?;:\"\'])', r'\1', decoded_text)
+    return re.sub(r'([\"])+\s', r'\0', re.sub(r'\s+([.,!?;:\'])', r'\1', decoded_text))
 
 
 
@@ -121,5 +121,5 @@ They do not know what it means. They are scared. They tremble. They want to run 
     
     for p in prompts:
         print(f"\nPrompt: {p}")
-        output = generate(p, max_new_tokens=100)
-        print(f"Generated: {output}")
+        output = generate(p, max_new_tokens=80)
+        print(f"\n\n\n\nGenerated: {output}")

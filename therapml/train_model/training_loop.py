@@ -17,7 +17,7 @@ from datasets import load_dataset
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 eval_interval = 20
-max_iters = 30000
+max_iters = 40000
 
 BASE_DIR = Path(__file__).resolve().parent
 
@@ -41,16 +41,16 @@ def get_tokens(dataset, num_samples=1000):
 train_tokens = get_tokens(train_dataset, num_samples=5000)
 val_tokens = get_tokens(valid_dataset, num_samples=500)
 
-block_size = 256
-batch_size = 128
+block_size = 128
+batch_size = 256
 d_model = 128
-num_layers = 4
+num_layers = 8
 num_heads = 4
 d_ff = 512
 learning_rate = 5e-4
 
 vocab_size = tokenizer.get_vocab_size()
-dummy_weights = generate_dummy_weights(vocab_size, d_model=128, d_ff=512, num_layers=4)
+dummy_weights = generate_dummy_weights(vocab_size, d_model=d_model, d_ff=d_ff, num_layers=num_layers)
 
 rope_module = RoPE(
     embedding_dim=d_model // num_heads,
@@ -62,10 +62,10 @@ rope_module = RoPE(
 model = TransformerLM(
     vocab_size=vocab_size,
     context_length=block_size,
-    d_model=128,
-    num_layers=4,
-    num_heads=4,
-    d_ff=512,
+    d_model=d_model,
+    num_layers=num_layers,
+    num_heads=num_heads,
+    d_ff=d_ff,
     num_tokens=block_size,
     rope=rope_module,
     weights=dummy_weights
@@ -94,9 +94,9 @@ def estimate_validation_loss():
     model.train()
     return v_loss
 
-min_loss = 100.0
+min_loss = 100000.0
 
-checkpoint_dir = 'therapml/train_model/models/'
+checkpoint_dir = 'therapml/train_model/models_4/'
 os.makedirs(checkpoint_dir, exist_ok=True)
 
 def get_latest_checkpoint(path):
