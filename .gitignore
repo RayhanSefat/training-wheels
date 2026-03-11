@@ -21,3 +21,6 @@ therapml/train_model/tokenizers
 
 # models
 therapml/train_model/models*
+
+# generated images
+*.png
