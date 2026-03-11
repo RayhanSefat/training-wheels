@@ -1,26 +1,21 @@
 import torch
-from tokenizers import Tokenizer
+from tokenizers import Tokenizer, decoders
 from therapml.lm import RoPE, TransformerLM
 from therapml.nn_blocks import softmax
 from .generator import generate_dummy_weights
+from .common import valid_dataset
+from .common import CHECKPOINT_FOLDER
+from .common import block_size, d_model, num_layers, num_heads, d_ff
 from pathlib import Path
 import re
-from datasets import load_dataset
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 BASE_DIR = Path(__file__).resolve().parent
-CHECKPOINT_PATH = 'therapml/train_model/models_4/checkpoint_best.pt'
-TOKENIZER_PATH = "therapml/train_model/tokenizers/my_tokenizer.json"
-
-dataset = load_dataset("roneneldan/TinyStories")
-
-block_size = 128
-d_model = 128
-num_layers = 8
-num_heads = 4
-d_ff = 512
+CHECKPOINT_PATH = f'{CHECKPOINT_FOLDER}/checkpoint_best.pt'
+TOKENIZER_PATH = "therapml/train_model/tokenizers/my_bpe_tokenizer.json"
 
 tokenizer = Tokenizer.from_file(TOKENIZER_PATH)
+tokenizer.decoder = decoders.ByteLevel()
 vocab_size = tokenizer.get_vocab_size()
 
 dummy_weights = generate_dummy_weights(vocab_size, d_model=d_model, d_ff=d_ff, num_layers=num_layers)
@@ -46,7 +41,7 @@ model = TransformerLM(
 
 if Path(CHECKPOINT_PATH).exists():
     checkpoint = torch.load(CHECKPOINT_PATH, map_location=device)
-    model.load_state_dict(checkpoint['model_state_dict'])
+    model.load_state_dict(checkpoint['model_state_dict'], strict=False)
     model.eval()
     print(f"Successfully loaded checkpoint from iteration {checkpoint['iter']}")
 else:
@@ -54,7 +49,7 @@ else:
     exit()
 
 def evaluate_test_loss():
-    test_data = dataset["test"]["text"][0]
+    test_data = valid_dataset["text"][0]
     
     test_ids = tokenizer.encode(test_data).ids
     test_tokens = torch.tensor(test_ids, dtype=torch.long).to(device)
@@ -102,7 +97,7 @@ def generate(prompt, max_new_tokens=100, temperature=0.7, top_k=20):
             
     decoded_text = tokenizer.decode(idx[0].tolist())
 
-    return re.sub(r'([\"])+\s', r'\0', re.sub(r'\s+([.,!?;:\'])', r'\1', decoded_text))
+    return decoded_text
 
 
 
@@ -121,5 +116,5 @@ They do not know what it means. They are scared. They tremble. They want to run 
     
     for p in prompts:
         print(f"\nPrompt: {p}")
-        output = generate(p, max_new_tokens=80)
+        output = generate(p, max_new_tokens=150)
         print(f"\n\n\n\nGenerated: {output}")

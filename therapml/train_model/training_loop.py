@@ -1,11 +1,14 @@
 import torch
 import torch.nn as nn
-from tokenizers import Tokenizer
+from tokenizers import Tokenizer, decoders
 from .generator import generate_dummy_weights
 from therapml.lm import RoPE, TransformerLM
 from therapml.optimizers import AdamW
 from therapml.loss import CrossEntropyLoss
 from therapml.misc import clip_grad_norm
+from .common import train_dataset, valid_dataset
+from .common import CHECKPOINT_FOLDER
+from .common import block_size, batch_size, d_model, num_layers, num_heads, d_ff
 
 import os
 os.chdir(os.getcwd())
@@ -13,7 +16,6 @@ os.chdir(os.getcwd())
 from pathlib import Path
 import re
 import glob
-from datasets import load_dataset
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 eval_interval = 20
@@ -21,12 +23,8 @@ max_iters = 40000
 
 BASE_DIR = Path(__file__).resolve().parent
 
-dataset = load_dataset("roneneldan/TinyStories")
-
-train_dataset = dataset["train"]
-valid_dataset = dataset["validation"]
-
-tokenizer = Tokenizer.from_file("therapml/train_model/tokenizers/my_tokenizer.json")
+tokenizer = Tokenizer.from_file("therapml/train_model/tokenizers/my_bpe_tokenizer.json")
+tokenizer.decoder = decoders.ByteLevel()
 
 train_ids = tokenizer.encode(train_dataset["text"][0]).ids
 val_ids = tokenizer.encode(valid_dataset["text"][0]).ids
@@ -41,12 +39,6 @@ def get_tokens(dataset, num_samples=1000):
 train_tokens = get_tokens(train_dataset, num_samples=5000)
 val_tokens = get_tokens(valid_dataset, num_samples=500)
 
-block_size = 128
-batch_size = 256
-d_model = 128
-num_layers = 8
-num_heads = 4
-d_ff = 512
 learning_rate = 5e-4
 
 vocab_size = tokenizer.get_vocab_size()
@@ -96,7 +88,7 @@ def estimate_validation_loss():
 
 min_loss = 100000.0
 
-checkpoint_dir = 'therapml/train_model/models_4/'
+checkpoint_dir = CHECKPOINT_FOLDER
 os.makedirs(checkpoint_dir, exist_ok=True)
 
 def get_latest_checkpoint(path):
