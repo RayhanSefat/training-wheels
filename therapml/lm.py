@@ -189,6 +189,11 @@ class TransformerLM(nn.Module):
             "gamma": self.ln_final_weight
         })
 
+        self.lm_head = Linear(self.d_model, self.vocab_size)
+        self.lm_head.load_state_dict({
+            "weight": self.lm_head_weight
+        })
+
     def __prepare_linear(self, x_proj_weight):
         out_features, in_features = x_proj_weight.shape
         
@@ -206,9 +211,5 @@ class TransformerLM(nn.Module):
   
         norm_x = self.norm_obj_x(x)
 
-        lm_head = Linear(self.d_model, self.vocab_size)
-        lm_head.load_state_dict({
-            "weight": self.lm_head_weight
-        })
-        logits = lm_head(norm_x)
+        logits = self.lm_head(norm_x)
         return logits
