@@ -10,7 +10,7 @@ test_dataset = train_test["test"]
 CHECKPOINT_FOLDER = "therapml/train_model/models_7"
 
 block_size = 256
-batch_size = 96
+batch_size = 32
 d_model = 128
 num_layers = 16
 num_heads = 4

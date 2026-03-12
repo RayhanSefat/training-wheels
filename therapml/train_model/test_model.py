@@ -3,7 +3,7 @@ from tokenizers import Tokenizer, decoders
 from therapml.lm import RoPE, TransformerLM
 from therapml.nn_blocks import softmax
 from .generator import generate_dummy_weights
-from .common import valid_dataset
+from .common import test_dataset
 from .common import CHECKPOINT_FOLDER
 from .common import block_size, d_model, num_layers, num_heads, d_ff
 from pathlib import Path
@@ -49,7 +49,7 @@ else:
     exit()
 
 def evaluate_test_loss():
-    test_data = valid_dataset["text"][0]
+    test_data = test_dataset["text"][0]
     
     test_ids = tokenizer.encode(test_data).ids
     test_tokens = torch.tensor(test_ids, dtype=torch.long).to(device)
@@ -107,11 +107,7 @@ if __name__ == "__main__":
     
     print("\n--- Model Inference ---")
     prompts = [
-        """Ben and Mia like to play in the big room with many books and papers. They see a big box with a lock on it. They want to know what is inside. They look for a key, but they cannot find one. They see a metal thing that looks like a stick. It is a file. They think it can open the lock.
-
-They take the file and try to put it in the lock. They push and pull, but nothing happens. They hear a loud noise. It is a beep. They look at the box. It has a red light and a number. The number is going down. 10, 9, 8...
-
-They do not know what it means. They are scared. They tremble. They want to run away, but they do not know how. The door is locked too. They scream for help, but no one hears them. The number is going down. 3, 2, 1..."""
+        """I graduated from Vassar College 10 years ago with a BA in Film and dived into life in New York City full of optimism and excitement for my future. I imagined that I'd be "rich and successful" by the time I was 25. After failing to secure a job in my field immediately after college I turned to retail. It was fairly easy work to get, and once I ascended into the world of high-end luxury designer sales, it afforded me just enough money to live a fairly comfortable -- if still a paycheck to paycheck -- existence while I pursued my creative passions. A couple-year interlude working as a production assistant on films and television shows offered some brief hope that I may actually make it into the business, but life as a freelancer was hard and I spent months on and off unemployment waiting for new projects to materialize. The desire for """
     ]
     
     for p in prompts:

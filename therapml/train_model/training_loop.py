@@ -5,7 +5,7 @@ from .generator import generate_dummy_weights
 from therapml.lm import RoPE, TransformerLM
 from therapml.optimizers import AdamW
 from therapml.loss import CrossEntropyLoss
-from therapml.misc import clip_grad_norm
+from therapml.misc import clip_grad_norm, get_cosine_schedule_with_warmup
 from .common import train_dataset, valid_dataset
 from .common import CHECKPOINT_FOLDER
 from .common import block_size, batch_size, d_model, num_layers, num_heads, d_ff
@@ -18,8 +18,9 @@ import re
 import glob
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
-eval_interval = 20
+eval_interval = 50
 max_iters = 40000
+warmup_stesp = int(0.1 * max_iters)
 
 BASE_DIR = Path(__file__).resolve().parent
 
@@ -65,6 +66,13 @@ model = TransformerLM(
 
 optimizer = AdamW(model.parameters(), lr=learning_rate)
 criterion = nn.CrossEntropyLoss()
+
+scheduler = get_cosine_schedule_with_warmup(
+    optimizer=optimizer,
+    num_warmup_steps=warmup_stesp,
+    num_training_steps=max_iters,
+    min_lr_ratio=0.01
+)
 
 def get_batch(data, batch_size, block_size):
     if len(data) < block_size + 1:
@@ -126,6 +134,7 @@ if __name__ == "__main__":
         loss.backward()
         clip_grad_norm(model.parameters(), max_norm=1.0)
         optimizer.step()
+        scheduler.step()
 
         validation_loss = estimate_validation_loss()
 
