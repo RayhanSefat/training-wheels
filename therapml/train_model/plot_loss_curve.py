@@ -41,7 +41,7 @@ def plot_checkpoints(checkpoint_dir):
     plt.grid(True, which="both", ls="-", alpha=0.5)
     
     plt.tight_layout()
-    plt.savefig("therapml/train_model/checkpoint_loss_curve_model_6.png")
+    plt.savefig("therapml/train_model/checkpoint_loss_curve_model_7.png")
     plt.show()
 
 if __name__ == "__main__":
