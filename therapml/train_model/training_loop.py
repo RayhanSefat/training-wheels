@@ -133,7 +133,10 @@ def check_gradients(model):
     print("--- Gradient Flow Check ---")
     for name, param in model.named_parameters():
         if param.requires_grad:
-            if param.grad is None:
+            if param.grad is not None:
+                grad_norm = param.grad.abs().mean().item()
+                print(f"{name:.<50} Grad: {grad_norm:.8f}")
+            else:
                 print(f"⚠️ {name:.<50} NO GRADIENT")
 
 if __name__ == "__main__":
@@ -151,7 +154,7 @@ if __name__ == "__main__":
         scheduler.step()
 
         validation_loss = estimate_validation_loss()
-        check_gradients(model)
+        # check_gradients(model)
 
         # Save Best Model
         if validation_loss < min_loss:

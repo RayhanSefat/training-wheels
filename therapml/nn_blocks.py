@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 from scipy.special import erf
 
-device = 'cuda' if torch.cuda.is_available() else 'cpu'
+device = 'cpu'
 
 def ReLU(in_features):
     data = torch.as_tensor(in_features)

@@ -90,10 +90,9 @@ def run_layernorm(input: Float[Tensor, "batch ..."], gamma: Float[Tensor, "batch
     return layernorm_layer(input)
 
 def run_rmsnorm(input: Float[Tensor, "batch ..."], gamma: Float[Tensor, "batch ..."]) -> Float[Tensor, "batch ..."]:
-    rmsnorm_layer = RMSNorm(gamma)
-    rmsnorm_layer.load_state_dict({
-        "gamma": gamma
-    })
+    rmsnorm_layer = RMSNorm(gamma.shape[-1])
+    with torch.no_grad():
+        rmsnorm_layer.gamma.copy_(gamma.flatten()[:input.shape[-1]])
     return rmsnorm_layer(input)
 
 def run_rope(

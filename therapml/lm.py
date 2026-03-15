@@ -5,7 +5,7 @@ import torch
 import torch.nn as nn
 import math
 
-device = 'cuda' if torch.cuda.is_available() else 'cpu'
+device = 'cpu'
 
 class RoPE(nn.Module):
     def __init__(self, embedding_dim, theta, context_len, token_positions):
@@ -99,8 +99,6 @@ class TransformerBlock(nn.Module):
         self.ctx_len = ctx_len
         self.multihead_self_attn = multihead_self_attn
         self.swiglu_layer = swiglu_layer
-        self.ln1_weight = nn.Parameter(torch.empty_like(weights["ln1.weight"]))
-        self.ln2_weight = nn.Parameter(torch.empty_like(weights["ln2.weight"]))
         self.rope = rope
         
         self.norm_obj_x = RMSNorm(d_model)
@@ -184,10 +182,6 @@ class TransformerLM(nn.Module):
                 d_model, num_heads, d_ff, context_length, 
                 multihead_self_attn, swiglu_layer, block_weights, rope=rope
             )
-            block.load_state_dict({
-                "ln1_weight": ln1_weight,
-                "ln2_weight": ln2_weight
-            }, strict=False)
             self.blocks.append(block)
 
     def __prepare_linear(self, x_proj_weight):
