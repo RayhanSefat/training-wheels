@@ -5,7 +5,7 @@ import torch
 import torch.nn as nn
 import math
 
-device = 'cpu'
+device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 class RoPE(nn.Module):
     def __init__(self, embedding_dim, theta, context_len, token_positions):
