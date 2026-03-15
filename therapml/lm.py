@@ -47,11 +47,11 @@ class SelfAttention(nn.Module):
     def forward(self, q):
         d_k = q.shape[-1]
 
+        k = self.k
+
         if self.rope is not None:
             q = self.rope(q)
-            k = self.rope(self.k)
-        else:
-            k = self.k
+            k = self.rope(k)
 
         scores = torch.matmul(q, k.transpose(-2, -1)) / (d_k ** 0.5)
         
@@ -103,11 +103,12 @@ class TransformerBlock(nn.Module):
         self.ln2_weight = nn.Parameter(torch.empty_like(weights["ln2.weight"]))
         self.rope = rope
         
-        self.norm_obj_x = RMSNorm(self.ln1_weight)
-        self.norm_obj_h = RMSNorm(self.ln2_weight)
+        self.norm_obj_x = RMSNorm(d_model)
+        self.norm_obj_h = RMSNorm(d_model)
 
-        self.norm_obj_x.gamma.data.copy_(weights["ln1.weight"])
-        self.norm_obj_h.gamma.data.copy_(weights["ln2.weight"])
+        with torch.no_grad():
+            self.norm_obj_x.gamma.copy_(weights["ln1.weight"])
+            self.norm_obj_h.gamma.copy_(weights["ln2.weight"])
 
     def forward(self, x):
         norm_x = self.norm_obj_x(x)
@@ -136,8 +137,13 @@ class TransformerLM(nn.Module):
         self.token_embedding_weight = nn.Embedding(vocab_size, d_model)
         self.token_embedding_weight.weight = nn.Parameter(weights["token_embeddings.weight"].clone())
 
-        self.ln_final_weight = nn.Parameter(weights["ln_final.weight"].clone())
-        self.lm_head_weight = nn.Parameter(weights["lm_head.weight"].clone())
+        self.norm_obj_x = RMSNorm(d_model)
+        with torch.no_grad():
+            self.norm_obj_x.gamma.copy_(weights["ln_final.weight"])
+
+        self.lm_head = Linear(d_model, vocab_size)
+        with torch.no_grad():
+            self.lm_head.weight.copy_(weights["lm_head.weight"])
 
         self.blocks = nn.ModuleList()
 
@@ -183,16 +189,6 @@ class TransformerLM(nn.Module):
                 "ln2_weight": ln2_weight
             }, strict=False)
             self.blocks.append(block)
-        
-        self.norm_obj_x = RMSNorm(self.ln_final_weight)
-        self.norm_obj_x.load_state_dict({
-            "gamma": self.ln_final_weight
-        })
-
-        self.lm_head = Linear(self.d_model, self.vocab_size)
-        self.lm_head.load_state_dict({
-            "weight": self.lm_head_weight
-        })
 
     def __prepare_linear(self, x_proj_weight):
         out_features, in_features = x_proj_weight.shape
