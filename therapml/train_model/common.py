@@ -7,9 +7,9 @@ train_dataset = train_val["train"]
 valid_dataset = train_val["test"]
 test_dataset = train_test["test"]
 
-CHECKPOINT_FOLDER = "therapml/train_model/models_7"
+CHECKPOINT_FOLDER = "therapml/train_model/models_8"
 
-block_size = 256
+block_size = 512
 batch_size = 32
 d_model = 128
 num_layers = 16

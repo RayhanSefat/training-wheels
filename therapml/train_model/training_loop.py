@@ -37,8 +37,10 @@ def get_tokens(dataset, num_samples=1000):
         all_ids.extend(tokenizer.encode(text).ids)
     return torch.tensor(all_ids, dtype=torch.long)
 
-train_tokens = get_tokens(train_dataset, num_samples=5000)
-val_tokens = get_tokens(valid_dataset, num_samples=500)
+print("Tokenizing...")
+train_tokens = get_tokens(train_dataset, num_samples=100000)
+val_tokens = get_tokens(valid_dataset, num_samples=10000)
+print(f"Number of train tokens = {len(train_tokens)}")
 
 learning_rate = 5e-4
 
@@ -63,6 +65,11 @@ model = TransformerLM(
     rope=rope_module,
     weights=dummy_weights
 ).to(device)
+
+model.load_state_dict({
+    "ln_final_weight": dummy_weights["ln_final.weight"],
+    "lm_head_weight": dummy_weights["lm_head.weight"]
+}, strict=False)
 
 optimizer = AdamW(model.parameters(), lr=learning_rate)
 criterion = nn.CrossEntropyLoss()
@@ -122,6 +129,13 @@ if latest_checkpoint:
 else:
     print("No checkpoint found. Starting from scratch.")
 
+def check_gradients(model):
+    print("--- Gradient Flow Check ---")
+    for name, param in model.named_parameters():
+        if param.requires_grad:
+            if param.grad is None:
+                print(f"⚠️ {name:.<50} NO GRADIENT")
+
 if __name__ == "__main__":
     for iter in range(start_iter, max_iters + 1):
         xb, yb = get_batch(train_tokens, batch_size, block_size)
@@ -137,6 +151,7 @@ if __name__ == "__main__":
         scheduler.step()
 
         validation_loss = estimate_validation_loss()
+        check_gradients(model)
 
         # Save Best Model
         if validation_loss < min_loss:

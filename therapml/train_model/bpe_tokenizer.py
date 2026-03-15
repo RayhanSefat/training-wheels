@@ -12,7 +12,7 @@ tokenizer.normalizer = normalizers.Lowercase()
 tokenizer.pre_tokenizer = pre_tokenizers.ByteLevel(add_prefix_space=True)
 
 trainer = trainers.BpeTrainer(
-    vocab_size=40000, 
+    vocab_size=256000, 
     show_progress=True,
     special_tokens=["[UNK]", "[CLS]", "[SEP]", "[PAD]", "[MASK]"]
 )
