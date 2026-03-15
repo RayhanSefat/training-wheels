@@ -102,11 +102,14 @@ class TransformerBlock(nn.Module):
         self.rope = rope
         
         self.norm_obj_x = RMSNorm(d_model)
-        self.norm_obj_h = RMSNorm(d_model)
+        self.norm_obj_x.load_state_dict({
+            "gamma": weights["ln1.weight"]
+        })
 
-        with torch.no_grad():
-            self.norm_obj_x.gamma.copy_(weights["ln1.weight"])
-            self.norm_obj_h.gamma.copy_(weights["ln2.weight"])
+        self.norm_obj_h = RMSNorm(d_model)
+        self.norm_obj_h.load_state_dict({
+            "gamma": weights["ln2.weight"]
+        })
 
     def forward(self, x):
         norm_x = self.norm_obj_x(x)
@@ -136,12 +139,14 @@ class TransformerLM(nn.Module):
         self.token_embedding_weight.weight = nn.Parameter(weights["token_embeddings.weight"].clone())
 
         self.norm_obj_x = RMSNorm(d_model)
-        with torch.no_grad():
-            self.norm_obj_x.gamma.copy_(weights["ln_final.weight"])
+        self.norm_obj_x.load_state_dict({
+            "gamma": weights["ln_final.weight"]
+        })
 
         self.lm_head = Linear(d_model, vocab_size)
-        with torch.no_grad():
-            self.lm_head.weight.copy_(weights["lm_head.weight"])
+        self.lm_head.load_state_dict({
+            "weight": weights["lm_head.weight"]
+        })
 
         self.blocks = nn.ModuleList()
 
