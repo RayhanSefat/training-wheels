@@ -158,11 +158,15 @@ if __name__ == "__main__":
 
         # Save Best Model
         if validation_loss < min_loss:
+            # Save best model and gradients
+            gradients = {name: param.grad.clone().cpu() if param.grad is not None else None
+                         for name, param in model.named_parameters() if param.requires_grad}
             torch.save({
                 'iter': iter,
                 'model_state_dict': model.state_dict(),
                 'optimizer_state_dict': optimizer.state_dict(),
                 'loss': validation_loss.item(),
+                'grad': gradients,
             }, os.path.join(checkpoint_dir, 'checkpoint_best.pt'))
             min_loss = validation_loss
             print("Best model updated")
