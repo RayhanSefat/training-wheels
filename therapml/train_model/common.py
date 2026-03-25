@@ -1,13 +1,10 @@
 from datasets import load_dataset
-dataset = load_dataset("Skylion007/openwebtext")["train"]
+dataset = load_dataset("roneneldan/TinyStories")
 
-train_test = dataset.train_test_split(test_size=0.1, seed=42)
-train_val = train_test["train"].train_test_split(test_size=0.1, seed=42)
-train_dataset = train_val["train"]
-valid_dataset = train_val["test"]
-test_dataset = train_test["test"]
+train_dataset = dataset["train"]
+valid_dataset = dataset["validation"]
 
-CHECKPOINT_FOLDER = "therapml/train_model/models_8"
+CHECKPOINT_FOLDER = "therapml/train_model/models"
 
 block_size = 512
 batch_size = 32

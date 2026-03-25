@@ -38,8 +38,8 @@ def get_tokens(dataset, num_samples=1000):
     return torch.tensor(all_ids, dtype=torch.long)
 
 print("Tokenizing...")
-train_tokens = get_tokens(train_dataset, num_samples=100000)
-val_tokens = get_tokens(valid_dataset, num_samples=10000)
+train_tokens = get_tokens(train_dataset, num_samples=5000)
+val_tokens = get_tokens(valid_dataset, num_samples=500)
 print(f"Number of train tokens = {len(train_tokens)}")
 
 learning_rate = 5e-4

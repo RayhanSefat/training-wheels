@@ -5,7 +5,7 @@ import glob
 from collections import defaultdict
 
 # Configuration
-checkpoint_dir = 'therapml/train_model/models_8/'
+checkpoint_dir = 'therapml/train_model/models/'
 output_dir = 'therapml/train_model/gradient_plots/'
 os.makedirs(output_dir, exist_ok=True)
 
