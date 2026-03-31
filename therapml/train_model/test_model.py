@@ -107,11 +107,7 @@ if __name__ == "__main__":
     
     print("\n--- Model Inference ---")
     prompts = [
-        """Ben and Mia like to play in the big room with many books and papers. They see a big box with a lock on it. They want to know what is inside. They look for a key, but they cannot find one. They see a metal thing that looks like a stick. It is a file. They think it can open the lock.
-
-They take the file and try to put it in the lock. They push and pull, but nothing happens. They hear a loud noise. It is a beep. They look at the box. It has a red light and a number. The number is going down. 10, 9, 8...
-
-They do not know what it means. They are scared. They tremble. They want to run away, but they do not know how. The door is locked too. They scream for help, but no one hears them. The number is going down. 3, 2, 1..."""
+        """I have a plan"""
     ]
     
     for p in prompts:

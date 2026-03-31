@@ -15,12 +15,15 @@ wheels/
 
 # dataset
 therapml/train_model/dataset
+therapml/mmlu/dataset
 
 # tokenizers
 therapml/train_model/tokenizers
+therapml/mmlu/tokenizers
 
 # models
 therapml/train_model/models*
+therapml/mmlu/models*
 
 # generated images
 *.png
