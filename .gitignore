@@ -14,16 +14,13 @@ wheels/
 .uv_cache/
 
 # dataset
-therapml/train_model/dataset
-therapml/mmlu/dataset
+dataset
 
 # tokenizers
-therapml/train_model/tokenizers
-therapml/mmlu/tokenizers
+tokenizers
 
 # models
-therapml/train_model/models*
-therapml/mmlu/models*
+models
 
 # generated images
 *.png
