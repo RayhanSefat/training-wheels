@@ -1,0 +1,210 @@
+--- SAMPLE 1 ---
+DIALOGUE:
+Ewan: Uncle I graduated!
+Uncle Jayson: My nephew gradumacated! 
+Uncle Jayson: How time flies congrats!
+Ewan: Haha thanks! Gradiated! 😂
+Uncle Jayson: 😂
+
+OUR SUMMARY:
+i'm you to the last: i'm. . . . . . .
+
+GOLD SUMMARY:
+Uncle Jayson is pleased with Ewan's graduation.
+
+ROUGE-L: 0.0000 | BLEU: 0.0000
+
+LLM EVALUATION:
+To evaluate the summaries, let's break down the grading for each based on the criteria provided:
+
+### Summary A (Model-1): i'm you to the last: i'm. . . . . . .
+
+1. **Coherence**: 1 - This summary is incoherent. It does not form a recognizable sentence or convey a meaningful idea related to the dialogue.
+2. **Informativeness**: 1 - It provides no information about the dialogue or its context.
+3. **Hallucination**: 1 - This summary hallucinates entirely, as it does not relate to the content of the dialogue in any way.
+
+### Summary B (Model-2): Uncle Jayson is pleased with Ewan's graduation.
+
+1. **Coherence**: 5 - This summary is coherent, forming a clear and understandable sentence.
+2. **Informativeness**: 5 - It is informative, conveying the main point of the dialogue, which is Uncle Jayson's positive reaction to Ewan's graduation.
+3. **Hallucination**: 5 - This summary does not hallucinate, as it accurately reflects the content and sentiment of the dialogue without introducing unrelated information.
+
+### Conclusion
+
+Summary B is significantly better than Summary A. This is because Summary B accurately captures the essence of the dialogue in a clear and concise manner, reflecting both the event (Ewan's graduation) and the sentiment (Uncle Jayson's pleasure). In contrast, Summary A is incoherent, uninformative, and completely unrelated to the dialogue, making it useless for understanding the conversation between Ewan and Uncle Jayson. Therefore, Summary B is the better summary due to its coherence, informativeness, and accuracy in representing the dialogue without hallucination.
+--------------------------------------------------
+
+
+
+--- SAMPLE 2 ---
+DIALOGUE:
+Aldo: Hi, did you get my email?
+Marco: Yes I did, thank you
+Aldo: I hope you like my article
+Aldo: It took me weeks to finish it
+Marco: Ok, I'll print it and read it right now
+Aldo: Thanks
+Marco: How many pages is it?
+Marco: Ok, got it, it's 12
+Aldo: Yep, 12
+Marco: Ok
+
+OUR SUMMARY:
+i'm. . . . . . . . . .
+
+GOLD SUMMARY:
+Marco will read Aldo's 12 page article that he spent 2 weeks writing.
+
+ROUGE-L: 0.0000 | BLEU: 0.0000
+
+LLM EVALUATION:
+To evaluate the summaries, let's break down the grading for each based on the criteria provided:
+
+### Summary A (Model-1): i'm. . . . . . . . . .
+1. **Coherence**: 1 - This summary is incoherent as it does not form a complete or understandable sentence related to the dialogue.
+2. **Informativeness**: 1 - It provides no information about the content of the dialogue.
+3. **Hallucination**: 1 - The summary introduces unrelated content ("i'm") that is not present in the dialogue, indicating high hallucination.
+
+### Summary B (Model-2): Marco will read Aldo's 12 page article that he spent 2 weeks writing.
+1. **Coherence**: 5 - This summary is coherent, forming a complete and understandable sentence that relates to the dialogue.
+2. **Informativeness**: 5 - It effectively conveys key points from the dialogue, including the action Marco will take (reading the article), the article's length (12 pages), and the effort Aldo put into it (though the dialogue mentions "weeks" without specifying the number, the summary inaccurately states "2 weeks").
+3. **Hallucination**: 4 - The summary slightly hallucinates by specifying "2 weeks" when the dialogue only mentions "weeks" without a number. However, the core information about the article and the actions is accurately represented.
+
+### Conclusion
+**Summary B** is better than Summary A for several reasons:
+- **Coherence and Informativeness**: Summary B is both coherent and informative, effectively capturing the essence of the dialogue.
+- **Hallucination**: While Summary B has a minor hallucination issue with the specifics of the timeframe, it is much closer to the actual content of the dialogue than Summary A.
+- **Overall Quality**: Summary B provides a clear, concise overview of the dialogue's main points, making it a more useful and accurate summary.
+
+The only improvement needed for Summary B would be to correct the minor hallucination by either stating "weeks" as per the dialogue or avoiding the specification of time altogether to maintain accuracy.
+--------------------------------------------------
+
+
+
+--- SAMPLE 3 ---
+DIALOGUE:
+Louis: did you see all the people outside the book shop today?
+Louis: it was insane!!!
+Sara: YES!!!
+Sara: i saw a hugeeeeeeee crowd
+Sara: do you know what was going on?
+Louis: my friend told me this writer, this new writer...
+Louis: i can't remember his name...
+Louis: the one that writes about vampires
+Sara: dante kyle?
+Louis: no, the other one
+Sara: cole grant?
+Louis: YES!! my friends told me he was there signing copies of his books
+Sara: no big loss then
+Sara: i'm not a fan of his
+
+OUR SUMMARY:
+yes. . . . . . . . . .
+
+GOLD SUMMARY:
+There was a crowd outside the bookshop today. Cole Grant, who writes about vampires, was allegedly in the bookshop signing his books.
+
+ROUGE-L: 0.0000 | BLEU: 0.0000
+
+LLM EVALUATION:
+To evaluate the summaries, let's break down the grading for each category:
+
+### Summary A (Model-1): yes. . . . . . . . . .
+
+1. **Coherence**: 1 - This summary lacks coherence as it does not form a meaningful sentence or convey any clear information about the dialogue.
+2. **Informativeness**: 1 - It is not informative at all, as it does not provide any details or insights into what was discussed in the dialogue.
+3. **Hallucination**: 1 - This summary can be considered to have high hallucination because it introduces no relevant or accurate information from the dialogue.
+
+### Summary B (Model-2): There was a crowd outside the bookshop today. Cole Grant, who writes about vampires, was allegedly in the bookshop signing his books.
+
+1. **Coherence**: 5 - This summary is coherent as it clearly states what happened and provides relevant details in a logical and understandable manner.
+2. **Informativeness**: 5 - It is highly informative, capturing the key points of the dialogue, including the presence of a crowd, the reason for the crowd (Cole Grant's book signing), and his genre of writing.
+3. **Hallucination**: 5 - This summary has no hallucination as it accurately reflects the content of the dialogue without introducing any false or unrelated information.
+
+### Conclusion
+
+**Summary B (Model-2)** is significantly better than **Summary A (Model-1)**. This is because Summary B effectively conveys the main points of the dialogue in a clear, coherent, and informative manner, without introducing any inaccurate information. It accurately identifies the reason for the crowd (Cole Grant's book signing) and his area of writing (vampires), making it a reliable and useful summary of the dialogue. In contrast, Summary A fails to provide any meaningful information or coherence, making it an ineffective summary.
+--------------------------------------------------
+
+
+
+--- SAMPLE 4 ---
+DIALOGUE:
+John: wanna go see "A Star is Born" on Wed?
+Joan: sorry can't
+Joan: super busy 
+Joan: don't have time for anything :( 
+John: that's a shame
+Joan: I'm free on Thursday
+John: I could do Thursday
+Joan: ok! so around 8pm?
+John: sure sounds great
+John: I'll see where it's palying and send you the details
+Joan: ok great!
+
+OUR SUMMARY:
+i'm. . . . . . . . . .
+
+GOLD SUMMARY:
+Joan and John are going to watch "A Star is Born" on Thursday around 8 p.m.
+
+ROUGE-L: 0.1053 | BLEU: 0.0000
+
+LLM EVALUATION:
+To evaluate the summaries, let's break down the grading for each based on the criteria provided:
+
+### Summary A (Model-1): i'm. . . . . . . . . .
+
+1. **Coherence**: 1 - This summary is incoherent as it does not form a complete or understandable sentence related to the dialogue.
+2. **Informativeness**: 1 - It provides no information about the conversation between John and Joan.
+3. **Hallucination**: 1 - The summary introduces unrelated content ("i'm") that is not derived from the dialogue, indicating high hallucination.
+
+### Summary B (Model-2): Joan and John are going to watch "A Star is Born" on Thursday around 8 p.m.
+
+1. **Coherence**: 5 - This summary is coherent, clearly stating the plans made by John and Joan.
+2. **Informativeness**: 5 - It accurately and succinctly summarizes the key points of the dialogue, including the movie, the day, and the time they plan to watch it.
+3. **Hallucination**: 5 - The summary only includes information directly derived from the dialogue, with no introduced or fabricated details.
+
+### Conclusion
+
+**Summary B (Model-2)** is significantly better than **Summary A (Model-1)**. This is because Summary B is coherent, providing a clear and understandable statement about the plans John and Joan made. It is also highly informative, capturing the essential details of their conversation. Lastly, it does not hallucinate, sticking strictly to the information given in the dialogue. In contrast, Summary A fails on all these fronts, being incoherent, uninformative, and hallucinatory. Therefore, Summary B is the better summary as it effectively conveys the content of the dialogue in a clear and accurate manner.
+--------------------------------------------------
+
+
+
+--- SAMPLE 5 ---
+DIALOGUE:
+Marco: hi there! is this yours?
+Marco: <file_photo>
+Marco: somebody left it at my place yesterday
+Sandra: ooops yes its mine
+Sandra: its Millas present, I bought it right before your party
+Sandra: can you bring it over?
+
+OUR SUMMARY:
+i'm. , i'm. , i'm. , i'm. , i'm. ,
+
+GOLD SUMMARY:
+Sandra bought a present for Milla right before Marco's party and left it in his place. She asks Marco to bring it over. 
+
+ROUGE-L: 0.0000 | BLEU: 0.0000
+
+LLM EVALUATION:
+To evaluate the summaries, let's break down the grading for each based on the criteria provided:
+
+### Summary A (Model-1)
+1. **Coherence**: 1 - The summary is completely incoherent as it consists of repetitive, incomplete phrases that do not form a meaningful sentence or convey any information about the dialogue.
+2. **Informativeness**: 1 - The summary does not provide any information about the dialogue's content.
+3. **Hallucination**: 1 - The summary can be considered as having high hallucination since it introduces content ("i'm") that is not related to the actual dialogue's context.
+
+### Summary B (Model-2)
+1. **Coherence**: 5 - The summary is coherent, forming a clear and understandable sentence that summarizes the key points of the dialogue.
+2. **Informativeness**: 5 - The summary is highly informative, capturing the essential details of the dialogue, including the item being a present for Milla, the context of its purchase, and the request made to Marco.
+3. **Hallucination**: 5 - The summary has no hallucination, as it only includes information that is directly derived from the dialogue without introducing unrelated or fabricated content.
+
+### Conclusion
+**Summary B (Model-2)** is significantly better than Summary A (Model-1). This is because Summary B effectively condenses the dialogue into a concise, understandable, and accurate summary that includes all the key points (the item belonging to Sandra, its intended recipient, the context of its being left at Marco's place, and the request for its return). In contrast, Summary A fails to provide any meaningful or relevant information about the dialogue, lacking coherence, informativeness, and introducing unrelated content. Therefore, Summary B is the better summary due to its clarity, relevance, and faithfulness to the original dialogue.
+--------------------------------------------------
+
+
+
