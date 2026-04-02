@@ -88,7 +88,7 @@ for doc_entry in processed_chunks:
     results.append(doc_results)
 
 report_df = pd.DataFrame(results)
-print("\n--- Average Retrieval Recall (Recall@10) ---")
+print(f"\n--- Average Retrieval Recall (Recall@{k}) ---")
 print(report_df.to_string(index=False))
 
 report_df.to_csv("therapml/rag/performance/retriever_1_performance.csv", index=False)
