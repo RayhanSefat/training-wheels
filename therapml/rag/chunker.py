@@ -11,8 +11,8 @@ with open("therapml/rag/top_10_documents.json", "r", encoding="utf-8") as f:
 
 embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
 
-chunk_size = 1000
-chunk_overlap = 100
+chunk_size = 1024
+chunk_overlap = 256
 
 fixed_splitter = CharacterTextSplitter(
     separator="\n\n",
