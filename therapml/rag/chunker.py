@@ -89,6 +89,6 @@ df_results = pd.DataFrame(results)
 print("\n\n\n--------- Chunking Strategy Comparison ---------")
 print(df_results.to_string(index=False))
 
-df_results.to_csv("therapml/rag/chunking_comparison.csv", index=False)
+df_results.to_csv("therapml/rag/performance/chunking_comparison.csv", index=False)
 with open("therapml/rag/processed_chunks.json", "w", encoding="utf-8") as f:
     json.dump(all_processed_data, f, indent=4)
