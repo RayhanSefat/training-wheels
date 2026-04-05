@@ -59,7 +59,7 @@ for doc_entry in processed_data:
     doc_qs = df_qs[df_qs['document'].apply(lambda x: x['id']) == doc_id]
     
     res = {"document_id": doc_id, "questions_count": len(doc_qs)}
-    chunks = {"document_id": doc_id, "questions_count": len(doc_qs), "strategies": {}}
+    chunks = {"document_id": doc_id, "questions_count": len(doc_qs), "questions": {}}
     
     strategies = doc_entry['strategies']
 
@@ -75,15 +75,19 @@ for doc_entry in processed_data:
             search_texts, mapping = content, None
 
         hits = 0
+        idx = 1
         for _, q_row in doc_qs.iterrows():
+            if chunks['questions'].get(idx) is None:
+                chunks['questions'][idx] = {"question": q_row['question']['text'], "strategy": {}}
             retrieved = hybrid_rerank_retrieve(q_row['question']['text'], search_texts, mapping)
+            chunks['questions'][idx]['strategy'][strat_name] = retrieved
+            idx += 1
             
             for ans in q_row['answers']:
                 if any(ans['text'].lower() in c.lower() for c in retrieved):
                     hits += 1; break
         
         res[strat_name] = hits / len(doc_qs)
-        chunks['strategies'][strat_name] = retrieved
     final_results.append(res)
     final_chunks.append(chunks)
 
