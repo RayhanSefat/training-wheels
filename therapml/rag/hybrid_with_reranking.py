@@ -5,6 +5,7 @@ from datasets import load_dataset
 from sklearn.metrics.pairwise import cosine_similarity
 from sentence_transformers import SentenceTransformer, CrossEncoder
 from rank_bm25 import BM25Okapi
+import atexit
 
 bi_encoder = SentenceTransformer('all-MiniLM-L6-v2')
 reranker = CrossEncoder('cross-encoder/ms-marco-MiniLM-L-6-v2')
@@ -51,12 +52,14 @@ target_ids = [d['document_id'] for d in processed_data]
 df_qs = ds.filter(lambda x: x['document']['id'] in target_ids).to_pandas()
 
 final_results = []
+final_chunks = []
 
 for doc_entry in processed_data:
     doc_id = doc_entry['document_id']
     doc_qs = df_qs[df_qs['document'].apply(lambda x: x['id']) == doc_id]
     
     res = {"document_id": doc_id, "questions_count": len(doc_qs)}
+    chunks = {"document_id": doc_id, "questions_count": len(doc_qs), "strategies": {}}
     
     strategies = doc_entry['strategies']
 
@@ -80,10 +83,15 @@ for doc_entry in processed_data:
                     hits += 1; break
         
         res[strat_name] = hits / len(doc_qs)
+        chunks['strategies'][strat_name] = retrieved
     final_results.append(res)
+    final_chunks.append(chunks)
 
 final_results_df = pd.DataFrame(final_results)
 print("\n--- Final Performance with Re-ranking ---")
 print(final_results_df)
 
 final_results_df.to_csv("therapml/rag/performance/hybrid_with_reranking_performance.csv", index=False)
+
+with open("therapml/rag/retrieved_chunks_cache.json", "w") as f:
+    json.dump(final_chunks, f, indent=2)
