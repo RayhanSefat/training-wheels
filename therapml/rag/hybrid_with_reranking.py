@@ -78,7 +78,7 @@ for doc_entry in processed_data:
         idx = 1
         for _, q_row in doc_qs.iterrows():
             if chunks['questions'].get(idx) is None:
-                chunks['questions'][idx] = {"question": q_row['question']['text'], "strategy": {}}
+                chunks['questions'][idx] = {"question": q_row['question']['text'], "ground_truth": q_row['answers'][0]['text'], "strategy": {}}
             retrieved = hybrid_rerank_retrieve(q_row['question']['text'], search_texts, mapping)
             chunks['questions'][idx]['strategy'][strat_name] = retrieved
             idx += 1
