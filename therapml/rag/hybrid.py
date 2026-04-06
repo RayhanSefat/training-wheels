@@ -6,7 +6,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 from sentence_transformers import SentenceTransformer, CrossEncoder
 from rank_bm25 import BM25Okapi
 
-K = 30
+K = 10
 RRF_K = 60
 MODEL_NAME = 'all-MiniLM-L6-v2'
 model = SentenceTransformer(MODEL_NAME)

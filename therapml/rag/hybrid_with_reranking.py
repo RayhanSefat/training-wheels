@@ -10,8 +10,8 @@ import atexit
 bi_encoder = SentenceTransformer('all-MiniLM-L6-v2')
 reranker = CrossEncoder('cross-encoder/ms-marco-MiniLM-L-6-v2')
 
-K_INITIAL = 70
-K_FINAL = 30
+K_INITIAL = 25
+K_FINAL = 10
 RRF_K = 60
 
 def rrf_score(v_ranks, b_ranks):

@@ -33,7 +33,7 @@ def get_recall_score(retrieved_chunks, answers):
                 return 1
     return 0
 
-k = 30
+k = 10
 results = []
 
 for doc_entry in processed_chunks:
