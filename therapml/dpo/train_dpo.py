@@ -1,72 +1,107 @@
-from transformers import AutoModelForCausalLM, AutoTokenizer
-from trl import DPOTrainer, DPOConfig
+import torch
 from datasets import load_dataset
+from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
+from peft import LoraConfig, prepare_model_for_kbit_training
+from trl import DPOTrainer, DPOConfig
 
-model_name = "gpt2"
-base_model = AutoModelForCausalLM.from_pretrained(model_name)
-tokenizer = AutoTokenizer.from_pretrained(model_name)
-tokenizer.pad_token = tokenizer.eos_token # Set pad token for batching
+model_id = "mistralai/Mistral-7B-v0.1" 
+dataset_id = "llmat/dpo-orpo-mix-38k-balanced"
+output_dir = "therapml/dpo/dpo_model_adapter"
 
-# Load and Prepare Dataset (using a small subset for demonstration)
-dataset = load_dataset("Anthropic/hh-rlhf", split="train[:1000]") # Use a small slice
-validation_dataset = load_dataset("Anthropic/hh-rlhf", split="train[1000:2000]") # Small validation set
+tokenizer = AutoTokenizer.from_pretrained(model_id)
+if tokenizer.pad_token is None:
+    tokenizer.pad_token = tokenizer.eos_token
+    tokenizer.pad_token_id = tokenizer.eos_token_id
 
-# Basic preprocessing: Tokenize the text
-def preprocess_function(examples):
-    batch_size = len(examples["chosen"])
-    return {
-        "prompt": ["This is a dummy prompt."] * batch_size,  # Placeholder prompt for DPO training
-        "chosen": examples["chosen"],
-        "rejected": examples["rejected"]
-    }
+if tokenizer.chat_template is None:
+    tokenizer.chat_template = (
+        "{% for message in messages %}"
+        "{{'<|im_start|>' + message['role'] + '\n' + message['content'] + '<|im_end|>' + '\n'}}"
+        "{% endfor %}"
+        "{% if add_generation_prompt %}"
+        "{{ '<|im_start|>assistant\n' }}"
+        "{% endif %}"
+    )
 
-tokenized_dataset = dataset.map(preprocess_function, batched=True, remove_columns=dataset.column_names)
-tokenized_validation_dataset = validation_dataset.map(preprocess_function, batched=True, remove_columns=validation_dataset.column_names)
+print("Loading and formatting dataset...")
+dataset = load_dataset(dataset_id, split="train")
 
-output_dir = "therapml/dpo/gpt2_hh-rlhf_results"
+def prep_dpo_data(example):
+    """
+    DPOTrainer requires exactly three columns: 'prompt', 'chosen', and 'rejected'.
+    This function handles standard conversational preference structures.
+    """
+    if isinstance(example.get('chosen'), list):
+        prompt_msgs = [m for m in example['chosen'] if m['role'] != 'assistant']
+        prompt = tokenizer.apply_chat_template(prompt_msgs, tokenize=False, add_generation_prompt=True)
+        
+        chosen = [m['content'] for m in example['chosen'] if m['role'] == 'assistant'][-1]
+        rejected = [m['content'] for m in example['rejected'] if m['role'] == 'assistant'][-1]
+    else:
+        prompt = example['prompt']
+        chosen = example['chosen']
+        rejected = example['rejected']
+        
+    return {"prompt": prompt, "chosen": chosen, "rejected": rejected}
+
+dataset = dataset.map(prep_dpo_data, remove_columns=dataset.column_names)
+
+dataset = dataset.train_test_split(test_size=0.05, seed=42)
+
+print("Loading model in 4-bit...")
+bnb_config = BitsAndBytesConfig(
+    load_in_4bit=True,
+    bnb_4bit_use_double_quant=True,
+    bnb_4bit_quant_type="nf4",
+    bnb_4bit_compute_dtype=torch.bfloat16
+)
+
+model = AutoModelForCausalLM.from_pretrained(
+    model_id,
+    quantization_config=bnb_config,
+    device_map="auto",
+)
+model = prepare_model_for_kbit_training(model)
+
+peft_config = LoraConfig(
+    r=16,
+    lora_alpha=32,
+    lora_dropout=0.05,
+    bias="none",
+    task_type="CAUSAL_LM",
+    target_modules=["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"] 
+)
+
 training_args = DPOConfig(
     output_dir=output_dir,
-    num_train_epochs=3,
-    per_device_train_batch_size=8,
+    beta=0.1,
+    per_device_train_batch_size=2,
+    gradient_accumulation_steps=8,
     learning_rate=5e-5,
+    lr_scheduler_type="cosine",
+    max_steps=500,
+    save_strategy="steps",
+    save_steps=100,
+    logging_steps=10,
+    optim="paged_adamw_32bit",
+    fp16=False,
+    bf16=True,
     remove_unused_columns=False,
-    logging_steps=20,
-    eval_strategy="steps",
-    eval_steps=20,
-    save_strategy="epoch",
-    max_length=512
-    # bf16=True,  # Use mixed precision if supported
+    report_to="none"
 )
 
-dpo_trainer = DPOTrainer(
-    model=base_model,
+trainer = DPOTrainer(
+    model=model,
     ref_model=None,
     args=training_args,
-    train_dataset=tokenized_dataset,
-    eval_dataset=tokenized_validation_dataset,
-    processing_class=tokenizer
+    train_dataset=dataset['train'],
+    eval_dataset=dataset['test'],
+    processing_class=tokenizer,
+    peft_config=peft_config,
 )
 
-dpo_trainer.train()
+print("Starting DPO training...")
+trainer.train()
 
-# Plot training vs validation loss
-import matplotlib.pyplot as plt
-
-# Extract training history
-train_loss = dpo_trainer.state.log_history
-
-steps = [log['step'] for log in train_loss if 'loss' in log]
-losses = [log['loss'] for log in train_loss if 'loss' in log]
-val_steps = [log['step'] for log in train_loss if 'eval_loss' in log]
-val_losses = [log['eval_loss'] for log in train_loss if 'eval_loss' in log]
-
-plt.figure(figsize=(10, 6))
-plt.plot(steps, losses, label='Training Loss', marker='o')
-plt.plot(val_steps, val_losses, label='Validation Loss', marker='s')
-plt.xlabel('Step')
-plt.ylabel('Loss')
-plt.title('Training vs Validation Loss Over Steps')
-plt.legend()
-plt.grid(True)
-plt.savefig(f'{output_dir}/loss.png')
-plt.close()
+trainer.save_model(output_dir)
+print(f"Training complete. Adapter saved to {output_dir}")
