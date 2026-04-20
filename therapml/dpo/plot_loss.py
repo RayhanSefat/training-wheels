@@ -28,7 +28,7 @@ plt.figure(figsize=(10, 6))
 if train_steps:
     plt.plot(train_steps, train_losses, label='Training Loss', color='blue', linewidth=2)
 
-plt.title('DPO Training and Validation Loss')
+plt.title('DPO Training Loss')
 plt.xlabel('Training Steps')
 plt.ylabel('Loss')
 plt.legend()
