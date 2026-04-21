@@ -5,6 +5,8 @@ build/
 dist/
 wheels/
 *.egg-info
+wandb/
+results/
 
 # Virtual environments
 .venv
@@ -27,6 +29,7 @@ models
 *.json
 *.csv
 *.arrow
+tea_debug.log
 
 # generated images
 *.png
