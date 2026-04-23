@@ -5,14 +5,14 @@ from peft import LoraConfig, get_peft_model, TaskType
 from datasets import load_dataset
 
 sweep_config = {
-    'method': 'random',
+    'method': 'bayes',
     'metric': {
         'name': 'eval/loss',
         'goal': 'minimize'   
     },
     'parameters': {
         'learning_rate': {
-            'values': [1e-4, 2e-4, 5e-5]
+            'values': [5e-5, 1e-4, 2e-4, 4e-4]
         },
         'lora_r': {
             'values': [8, 16, 32]
@@ -22,6 +22,9 @@ sweep_config = {
         },
         'batch_size': {
             'values': [4, 8]
+        },
+        'remove_unused_columns': {
+            'values': [True, False]
         }
     }
 }
@@ -78,7 +81,7 @@ def train_func():
             eval_strategy="steps",
             eval_steps=50,
             fp16=torch.cuda.is_available(),
-            remove_unused_columns=False,
+            remove_unused_columns=config.remove_unused_columns,
             run_name=run.name 
         )
 
@@ -93,4 +96,4 @@ def train_func():
         trainer.train()
 
 if __name__ == "__main__":
-    wandb.agent(sweep_id, function=train_func, count=5)
+    wandb.agent(sweep_id, function=train_func, count=20)
