@@ -72,7 +72,7 @@ def evaluate_test_loss():
     avg_loss = sum(losses) / len(losses) if losses else 0
     return avg_loss
 
-def generate(prompt, max_new_tokens=100, temperature=0.7, top_k=20):
+def generate(prompt, max_new_tokens=100, temperature=0.00001, top_k=10):
     input_ids = tokenizer.encode(prompt).ids
     idx = torch.tensor(input_ids, dtype=torch.long, device=device).unsqueeze(0)
     
@@ -107,7 +107,7 @@ if __name__ == "__main__":
     
     print("\n--- Model Inference ---")
     prompts = [
-        """I have a plan"""
+        """One day, a little boy named Timmy went to the park with his mom. Timmy loved going to the park because there were lots of things to do. He liked to swing on the swings and slide down the slide."""
     ]
     
     for p in prompts:
