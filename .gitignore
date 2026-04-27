@@ -24,6 +24,7 @@ tokenizers
 
 # models
 models
+cross_models
 
 # generated files
 *.json
